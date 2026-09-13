@@ -1,0 +1,6 @@
+{
+  "name": "Car Wash Pro",
+  "description": "Application mobile-first professionnelle de gestion de Car Wash : clients, véhicules, prestations, file d'attente, encaissements et tickets de caisse POS thermiques.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
