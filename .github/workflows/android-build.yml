@@ -1,0 +1,98 @@
+name: Android Build & Release APK
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    name: Génération et Publication APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Extraire le code source
+        uses: actions/checkout@v4
+
+      - name: Configurer JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Configurer Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Préparer l'environnement et le Keystore
+        run: |
+          # Restaurer debug.keystore si présent en base64
+          if [ -f debug.keystore.base64 ]; then
+            echo "Restauration du debug.keystore..."
+            base64 -d debug.keystore.base64 > debug.keystore
+          elif [ ! -f debug.keystore ]; then
+            echo "Génération d'un debug.keystore de secours..."
+            keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
+          # Créer le fichier .env pour le plugin Secrets
+          if [ ! -f .env ] && [ -f .env.example ]; then
+            cp .env.example .env
+          elif [ ! -f .env ]; then
+            touch .env
+          fi
+
+      - name: Rendre gradlew exécutable
+        run: |
+          if [ ! -f gradlew ]; then
+            gradle wrapper
+          fi
+          chmod +x gradlew
+
+      - name: Compiler l'APK de débogage
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Vérifier la présence de l'APK
+        run: |
+          if [ ! -f app/build/outputs/apk/debug/app-debug.apk ]; then
+            echo "Erreur : app-debug.apk introuvable !"
+            exit 1
+          fi
+          echo "APK généré avec succès :"
+          ls -lh app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Téléverser l'artefact APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
+
+      - name: Publier la Release GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "Car Wash Pro - APK Debug"
+          body: |
+            ## 📱 Car Wash Pro - Téléchargement APK
+
+            Téléchargement automatique de l'APK de débogage pour Android.
+
+            - **Fichier :** `app-debug.apk`
+            - **Branche :** `${{ github.ref_name }}`
+            - **Commit :** `${{ github.sha }}`
+
+            ### 🚀 Instructions d'installation :
+            1. Téléchargez le fichier `app-debug.apk` ci-dessous.
+            2. Ouvrez le fichier sur votre appareil Android.
+            3. Autorisez l'installation d'applications inconnues si demandé.
+            4. Installez et lancez l'application.
+          files: app/build/outputs/apk/debug/app-debug.apk
+          prerelease: false
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
