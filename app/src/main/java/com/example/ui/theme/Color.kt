@@ -13,10 +13,19 @@ val BackgroundLight = Color(0xFFF8FAFC) // Very clean slate-tinted canvas
 val SurfaceLight = Color(0xFFFFFFFF)    // Crisp white card surface
 val SurfaceVariantLight = Color(0xFFF1F5F9)
 
-val TextPrimary = Color(0xFF0F172A)
-val TextSecondary = Color(0xFF64748B)
-val TextMuted = Color(0xFF94A3B8)
-val BorderLight = Color(0xFFE2E8F0)
+// Clean high-contrast text and border palette
+val TextPrimary = Color(0xFF0F172A)      // Jet dark slate for ultra-crisp readable text
+val TextSecondary = Color(0xFF334155)    // Dark slate grey (high contrast)
+val TextMuted = Color(0xFF64748B)        // Clear visible muted
+val BorderLight = Color(0xFFCBD5E1)      // Crisp defined border
+val BorderSubtle = Color(0xFFE2E8F0)
+
+// Input specific styling
+val InputBackground = Color(0xFFFFFFFF)
+val InputBorderDefault = Color(0xFFCBD5E1)
+val InputBorderFocused = Color(0xFF0284C7)
+val InputTextColor = Color(0xFF0F172A)
+val InputPlaceholderColor = Color(0xFF64748B)
 
 // Status Colors
 val StatusPending = Color(0xFFF59E0B)       // En attente (Amber/Orange)

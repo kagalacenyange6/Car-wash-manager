@@ -308,36 +308,44 @@ private fun Step1ChooseCustomer(
                 modifier = Modifier
                     .weight(1f)
                     .testTag("customer_search_input"),
-                placeholder = { Text("Rechercher un client...", fontSize = 14.sp) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextMuted) },
+                placeholder = {
+                    Text(
+                        "Rechercher un client...",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF64748B)
+                    )
+                },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = BlueAccent) },
                 singleLine = true,
+                textStyle = carWashInputTextStyle,
                 shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = BlueAccent,
-                    unfocusedBorderColor = BorderLight
-                )
+                colors = carWashTextFieldColors()
             )
 
             Spacer(modifier = Modifier.width(8.dp))
 
             Button(
                 onClick = { showQuickAdd = !showQuickAdd },
-                colors = ButtonDefaults.buttonColors(containerColor = Navy900),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Navy900,
+                    contentColor = Color.White
+                ),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.height(52.dp).testTag("quick_add_customer_button")
             ) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Nouveau", fontSize = 13.sp)
+                Text("Nouveau", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
         }
 
         if (showQuickAdd) {
             Spacer(modifier = Modifier.height(12.dp))
             Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
                 shape = RoundedCornerShape(14.dp),
-                border = BorderStroke(1.dp, BlueAccent.copy(alpha = 0.3f)),
+                border = BorderStroke(1.5.dp, Color(0xFFCBD5E1)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
@@ -349,19 +357,23 @@ private fun Step1ChooseCustomer(
                     OutlinedTextField(
                         value = newName,
                         onValueChange = { newName = it },
-                        label = { Text("Nom complet *") },
+                        label = { Text("Nom complet *", fontWeight = FontWeight.SemiBold) },
+                        textStyle = carWashInputTextStyle,
+                        colors = carWashTextFieldColors(),
                         modifier = Modifier.fillMaxWidth().testTag("new_customer_name"),
                         singleLine = true,
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(12.dp)
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     OutlinedTextField(
                         value = newPhone,
                         onValueChange = { newPhone = it },
-                        label = { Text("Téléphone *") },
+                        label = { Text("Téléphone *", fontWeight = FontWeight.SemiBold) },
+                        textStyle = carWashInputTextStyle,
+                        colors = carWashTextFieldColors(),
                         modifier = Modifier.fillMaxWidth().testTag("new_customer_phone"),
                         singleLine = true,
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(12.dp)
                     )
                     Spacer(modifier = Modifier.height(10.dp))
                     CarWashPrimaryButton(
@@ -505,21 +517,26 @@ private fun Step2ChooseVehicle(
 
             OutlinedButton(
                 onClick = { showAddVehicle = !showAddVehicle },
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = Color.White,
+                    contentColor = Navy900
+                ),
+                border = BorderStroke(1.5.dp, Navy900),
                 shape = RoundedCornerShape(10.dp),
                 modifier = Modifier.height(40.dp).testTag("quick_add_vehicle_button")
             ) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.Add, contentDescription = null, tint = Navy900, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(4.dp))
-                Text(if (showAddVehicle) "Annuler" else "Nouveau", fontSize = 12.sp)
+                Text(if (showAddVehicle) "Annuler" else "Nouveau", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Navy900)
             }
         }
 
         if (showAddVehicle) {
             Spacer(modifier = Modifier.height(10.dp))
             Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
                 shape = RoundedCornerShape(14.dp),
-                border = BorderStroke(1.dp, BlueAccent.copy(alpha = 0.3f)),
+                border = BorderStroke(1.5.dp, Color(0xFFCBD5E1)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
@@ -531,29 +548,35 @@ private fun Step2ChooseVehicle(
                     OutlinedTextField(
                         value = plate,
                         onValueChange = { plate = it.uppercase() },
-                        label = { Text("Plaque d'immatriculation * (ex: KN-1024-AA)") },
+                        label = { Text("Plaque d'immatriculation * (ex: KN-1024-AA)", fontWeight = FontWeight.SemiBold) },
+                        textStyle = carWashInputTextStyle,
+                        colors = carWashTextFieldColors(),
                         modifier = Modifier.fillMaxWidth().testTag("new_vehicle_plate"),
                         singleLine = true,
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(12.dp)
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Row(modifier = Modifier.fillMaxWidth()) {
                         OutlinedTextField(
                             value = brand,
                             onValueChange = { brand = it },
-                            label = { Text("Marque (ex: Toyota)") },
+                            label = { Text("Marque (ex: Toyota)", fontWeight = FontWeight.SemiBold) },
+                            textStyle = carWashInputTextStyle,
+                            colors = carWashTextFieldColors(),
                             modifier = Modifier.weight(1f).testTag("new_vehicle_brand"),
                             singleLine = true,
-                            shape = RoundedCornerShape(8.dp)
+                            shape = RoundedCornerShape(12.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         OutlinedTextField(
                             value = model,
                             onValueChange = { model = it },
-                            label = { Text("Modèle (ex: Corolla)") },
+                            label = { Text("Modèle (ex: Corolla)", fontWeight = FontWeight.SemiBold) },
+                            textStyle = carWashInputTextStyle,
+                            colors = carWashTextFieldColors(),
                             modifier = Modifier.weight(1f).testTag("new_vehicle_model"),
                             singleLine = true,
-                            shape = RoundedCornerShape(8.dp)
+                            shape = RoundedCornerShape(12.dp)
                         )
                     }
                     Spacer(modifier = Modifier.height(8.dp))
@@ -931,10 +954,18 @@ private fun Step4Confirm(
         OutlinedTextField(
             value = notes,
             onValueChange = onNotesChange,
-            placeholder = { Text("Instructions spéciales pour le laveur (optionnel)...", fontSize = 13.sp) },
+            placeholder = {
+                Text(
+                    "Instructions spéciales pour le laveur (optionnel)...",
+                    fontSize = 13.sp,
+                    color = Color(0xFF64748B)
+                )
+            },
+            textStyle = carWashInputTextStyle,
+            colors = carWashTextFieldColors(),
             modifier = Modifier.fillMaxWidth().testTag("order_notes_input"),
             maxLines = 2,
-            shape = RoundedCornerShape(10.dp)
+            shape = RoundedCornerShape(12.dp)
         )
 
         Spacer(modifier = Modifier.height(16.dp))

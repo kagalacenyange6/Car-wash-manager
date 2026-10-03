@@ -85,8 +85,8 @@ fun CarWashBottomNav(
                         selectedIconColor = Color.White,
                         selectedTextColor = Navy900,
                         indicatorColor = Navy900,
-                        unselectedIconColor = TextSecondary,
-                        unselectedTextColor = TextMuted
+                        unselectedIconColor = Color(0xFF475569),
+                        unselectedTextColor = Color(0xFF475569)
                     ),
                     modifier = Modifier.testTag("tab_${tab.name.lowercase()}")
                 )

@@ -88,6 +88,8 @@ import com.example.ui.PlusScreen
 import com.example.ui.components.CarWashPrimaryButton
 import com.example.ui.components.EmptyStateView
 import com.example.ui.components.StatusChip
+import com.example.ui.components.carWashInputTextStyle
+import com.example.ui.components.carWashTextFieldColors
 import com.example.ui.theme.BlueAccent
 import com.example.ui.theme.BorderLight
 import com.example.ui.theme.Navy900
@@ -492,12 +494,16 @@ fun ExpensesSubScreen(viewModel: CarWashViewModel, modifier: Modifier = Modifier
 
                 Button(
                     onClick = { showAddExpense = true },
-                    colors = ButtonDefaults.buttonColors(containerColor = StatusDebt),
-                    shape = RoundedCornerShape(10.dp)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = StatusDebt,
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Ajouter", fontSize = 12.sp)
+                    Text("Ajouter", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
         }
@@ -599,20 +605,24 @@ fun AddExpenseSheet(
             OutlinedTextField(
                 value = amountText,
                 onValueChange = { amountText = it },
-                label = { Text("Montant *") },
+                label = { Text("Montant *", fontWeight = FontWeight.SemiBold) },
+                textStyle = carWashInputTextStyle,
+                colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
-                label = { Text("Description / Motif") },
+                label = { Text("Description / Motif", fontWeight = FontWeight.SemiBold) },
+                textStyle = carWashInputTextStyle,
+                colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -623,11 +633,15 @@ fun AddExpenseSheet(
                         onSave(category, amt, description)
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = StatusDebt),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = StatusDebt,
+                    contentColor = Color.White
+                ),
                 shape = RoundedCornerShape(12.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                 modifier = Modifier.fillMaxWidth().height(50.dp)
             ) {
-                Text("Enregistrer la dépense", fontWeight = FontWeight.Bold)
+                Text("Enregistrer la dépense", fontWeight = FontWeight.ExtraBold, color = Color.White, fontSize = 15.sp)
             }
         }
     }
@@ -655,13 +669,17 @@ fun StockSubScreen(viewModel: CarWashViewModel, modifier: Modifier = Modifier) {
             Text("${products.size} article(s) suivi(s)", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = TextSecondary)
             Button(
                 onClick = { showAddProduct = true },
-                colors = ButtonDefaults.buttonColors(containerColor = Navy900),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Navy900,
+                    contentColor = Color.White
+                ),
                 shape = RoundedCornerShape(8.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                 modifier = Modifier.height(36.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Nouveau", fontSize = 12.sp)
+                Text("Nouveau", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
         }
 
@@ -704,10 +722,15 @@ fun StockSubScreen(viewModel: CarWashViewModel, modifier: Modifier = Modifier) {
                             Spacer(modifier = Modifier.width(8.dp))
                             OutlinedButton(
                                 onClick = { showAdjustDialog = prod },
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    containerColor = Color.White,
+                                    contentColor = Navy900
+                                ),
+                                border = BorderStroke(1.5.dp, Navy900),
                                 shape = RoundedCornerShape(8.dp),
                                 modifier = Modifier.height(34.dp)
                             ) {
-                                Text("Ajuster", fontSize = 11.sp)
+                                Text("Ajuster", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Navy900)
                             }
                         }
                     }
@@ -764,17 +787,25 @@ fun StockAdjustSheet(
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = { isAdd = true },
-                    colors = ButtonDefaults.buttonColors(containerColor = if (isAdd) StatusCompleted else Color(0xFFF1F5F9)),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isAdd) Color(0xFF059669) else Color(0xFFF1F5F9),
+                        contentColor = if (isAdd) Color.White else Navy900
+                    ),
+                    shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("+ Entrée", color = if (isAdd) Color.White else TextPrimary)
+                    Text("+ Entrée", color = if (isAdd) Color.White else Navy900, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
                 }
                 Button(
                     onClick = { isAdd = false },
-                    colors = ButtonDefaults.buttonColors(containerColor = if (!isAdd) StatusDebt else Color(0xFFF1F5F9)),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (!isAdd) Color(0xFFE11D48) else Color(0xFFF1F5F9),
+                        contentColor = if (!isAdd) Color.White else Navy900
+                    ),
+                    shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("- Sortie", color = if (!isAdd) Color.White else TextPrimary)
+                    Text("- Sortie", color = if (!isAdd) Color.White else Navy900, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
                 }
             }
 
@@ -782,20 +813,24 @@ fun StockAdjustSheet(
             OutlinedTextField(
                 value = qtyText,
                 onValueChange = { qtyText = it },
-                label = { Text("Quantité (${product.unit}) *") },
+                label = { Text("Quantité (${product.unit}) *", fontWeight = FontWeight.SemiBold) },
+                textStyle = carWashInputTextStyle,
+                colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = reason,
                 onValueChange = { reason = it },
-                label = { Text("Motif (ex: Achat fournisseur, Lavage atelier)") },
+                label = { Text("Motif (ex: Achat fournisseur, Lavage atelier)", fontWeight = FontWeight.SemiBold) },
+                textStyle = carWashInputTextStyle,
+                colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -806,11 +841,15 @@ fun StockAdjustSheet(
                         onConfirm(if (isAdd) "ENTREE" else "SORTIE", q, reason)
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = Navy900),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Navy900,
+                    contentColor = Color.White
+                ),
                 shape = RoundedCornerShape(12.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                 modifier = Modifier.fillMaxWidth().height(50.dp)
             ) {
-                Text("Valider le mouvement", fontWeight = FontWeight.Bold)
+                Text("Valider le mouvement", fontWeight = FontWeight.ExtraBold, color = Color.White, fontSize = 15.sp)
             }
         }
     }
@@ -840,10 +879,12 @@ fun AddProductSheet(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Nom de l'article * (ex: Shampoing carrosserie)") },
+                label = { Text("Nom de l'article * (ex: Shampoing carrosserie)", fontWeight = FontWeight.SemiBold) },
+                textStyle = carWashInputTextStyle,
+                colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -851,19 +892,23 @@ fun AddProductSheet(
                 OutlinedTextField(
                     value = stockText,
                     onValueChange = { stockText = it },
-                    label = { Text("Stock initial") },
+                    label = { Text("Stock initial", fontWeight = FontWeight.SemiBold) },
+                    textStyle = carWashInputTextStyle,
+                    colors = carWashTextFieldColors(),
                     modifier = Modifier.weight(1f),
                     singleLine = true,
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(12.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 OutlinedTextField(
                     value = unit,
                     onValueChange = { unit = it },
-                    label = { Text("Unité (L, pcs, kg)") },
+                    label = { Text("Unité (L, pcs, kg)", fontWeight = FontWeight.SemiBold) },
+                    textStyle = carWashInputTextStyle,
+                    colors = carWashTextFieldColors(),
                     modifier = Modifier.weight(1f),
                     singleLine = true,
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(12.dp)
                 )
             }
 
@@ -871,10 +916,12 @@ fun AddProductSheet(
             OutlinedTextField(
                 value = minThText,
                 onValueChange = { minThText = it },
-                label = { Text("Seuil d'alerte minimum") },
+                label = { Text("Seuil d'alerte minimum", fontWeight = FontWeight.SemiBold) },
+                textStyle = carWashInputTextStyle,
+                colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -886,11 +933,15 @@ fun AddProductSheet(
                         onSave(name, s, unit, m)
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = Navy900),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Navy900,
+                    contentColor = Color.White
+                ),
                 shape = RoundedCornerShape(12.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                 modifier = Modifier.fillMaxWidth().height(50.dp)
             ) {
-                Text("Enregistrer l'article", fontWeight = FontWeight.Bold)
+                Text("Enregistrer l'article", fontWeight = FontWeight.ExtraBold, color = Color.White, fontSize = 15.sp)
             }
         }
     }
@@ -918,13 +969,17 @@ fun EmployeesSubScreen(viewModel: CarWashViewModel, modifier: Modifier = Modifie
             Text("${employees.size} membre(s) de l'équipe", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = TextSecondary)
             Button(
                 onClick = { showAddEmployee = true },
-                colors = ButtonDefaults.buttonColors(containerColor = Navy900),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Navy900,
+                    contentColor = Color.White
+                ),
                 shape = RoundedCornerShape(8.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                 modifier = Modifier.height(36.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Nouveau", fontSize = 12.sp)
+                Text("Nouveau", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
         }
 
@@ -999,20 +1054,24 @@ fun AddEmployeeSheet(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Nom complet *") },
+                label = { Text("Nom complet *", fontWeight = FontWeight.SemiBold) },
+                textStyle = carWashInputTextStyle,
+                colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = phone,
                 onValueChange = { phone = it },
-                label = { Text("Téléphone *") },
+                label = { Text("Téléphone *", fontWeight = FontWeight.SemiBold) },
+                textStyle = carWashInputTextStyle,
+                colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -1034,10 +1093,12 @@ fun AddEmployeeSheet(
             OutlinedTextField(
                 value = pin,
                 onValueChange = { pin = it },
-                label = { Text("Code PIN (4 chiffres)") },
+                label = { Text("Code PIN (4 chiffres)", fontWeight = FontWeight.SemiBold) },
+                textStyle = carWashInputTextStyle,
+                colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -1047,11 +1108,15 @@ fun AddEmployeeSheet(
                         onSave(name, "${name.lowercase().replace(" ", "")}@carwash.com", phone, role, pin)
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = Navy900),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Navy900,
+                    contentColor = Color.White
+                ),
                 shape = RoundedCornerShape(12.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                 modifier = Modifier.fillMaxWidth().height(50.dp)
             ) {
-                Text("Enregistrer le membre", fontWeight = FontWeight.Bold)
+                Text("Enregistrer le membre", fontWeight = FontWeight.ExtraBold, color = Color.White, fontSize = 15.sp)
             }
         }
     }
@@ -1241,10 +1306,15 @@ fun NotificationsSubScreen(viewModel: CarWashViewModel, modifier: Modifier = Mod
             Text("${notifs.size} notification(s)", color = TextSecondary, fontSize = 13.sp)
             OutlinedButton(
                 onClick = { viewModel.markAllNotificationsRead() },
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = Color.White,
+                    contentColor = Navy900
+                ),
+                border = BorderStroke(1.5.dp, Navy900),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.height(34.dp)
             ) {
-                Text("Tout marquer comme lu", fontSize = 11.sp)
+                Text("Tout marquer comme lu", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Navy900)
             }
         }
 
@@ -1316,10 +1386,12 @@ fun SettingsSubScreen(viewModel: CarWashViewModel, modifier: Modifier = Modifier
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Nom du Car Wash") },
+                    label = { Text("Nom du Car Wash", fontWeight = FontWeight.SemiBold) },
+                    textStyle = carWashInputTextStyle,
+                    colors = carWashTextFieldColors(),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(12.dp)
                 )
             }
 
@@ -1328,19 +1400,23 @@ fun SettingsSubScreen(viewModel: CarWashViewModel, modifier: Modifier = Modifier
                     OutlinedTextField(
                         value = phone,
                         onValueChange = { phone = it },
-                        label = { Text("Téléphone") },
+                        label = { Text("Téléphone", fontWeight = FontWeight.SemiBold) },
+                        textStyle = carWashInputTextStyle,
+                        colors = carWashTextFieldColors(),
                         modifier = Modifier.weight(1f),
                         singleLine = true,
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(12.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     OutlinedTextField(
                         value = currency,
                         onValueChange = { currency = it },
-                        label = { Text("Devise ($, €, FC)") },
+                        label = { Text("Devise ($, €, FC)", fontWeight = FontWeight.SemiBold) },
+                        textStyle = carWashInputTextStyle,
+                        colors = carWashTextFieldColors(),
                         modifier = Modifier.weight(1f),
                         singleLine = true,
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(12.dp)
                     )
                 }
             }
@@ -1349,10 +1425,12 @@ fun SettingsSubScreen(viewModel: CarWashViewModel, modifier: Modifier = Modifier
                 OutlinedTextField(
                     value = address,
                     onValueChange = { address = it },
-                    label = { Text("Adresse physique") },
+                    label = { Text("Adresse physique", fontWeight = FontWeight.SemiBold) },
+                    textStyle = carWashInputTextStyle,
+                    colors = carWashTextFieldColors(),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(12.dp)
                 )
             }
 
@@ -1389,9 +1467,11 @@ fun SettingsSubScreen(viewModel: CarWashViewModel, modifier: Modifier = Modifier
                 OutlinedTextField(
                     value = headerNote,
                     onValueChange = { headerNote = it },
-                    label = { Text("En-tête personnalisé sur le ticket") },
+                    label = { Text("En-tête personnalisé sur le ticket", fontWeight = FontWeight.SemiBold) },
+                    textStyle = carWashInputTextStyle,
+                    colors = carWashTextFieldColors(),
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(12.dp)
                 )
             }
 
@@ -1399,9 +1479,11 @@ fun SettingsSubScreen(viewModel: CarWashViewModel, modifier: Modifier = Modifier
                 OutlinedTextField(
                     value = footerNote,
                     onValueChange = { footerNote = it },
-                    label = { Text("Pied de page sur le ticket (ex: Pas de réclamation après 24h)") },
+                    label = { Text("Pied de page sur le ticket (ex: Pas de réclamation après 24h)", fontWeight = FontWeight.SemiBold) },
+                    textStyle = carWashInputTextStyle,
+                    colors = carWashTextFieldColors(),
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(12.dp)
                 )
             }
 
@@ -1421,11 +1503,15 @@ fun SettingsSubScreen(viewModel: CarWashViewModel, modifier: Modifier = Modifier
                             )
                         )
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Navy900),
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Navy900,
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
+                    modifier = Modifier.fillMaxWidth().height(50.dp)
                 ) {
-                    Text("Sauvegarder les modifications", fontWeight = FontWeight.Bold)
+                    Text("Sauvegarder les modifications", fontWeight = FontWeight.ExtraBold, color = Color.White, fontSize = 14.sp)
                 }
             }
 
@@ -1464,12 +1550,17 @@ fun SettingsSubScreen(viewModel: CarWashViewModel, modifier: Modifier = Modifier
                         Spacer(modifier = Modifier.height(8.dp))
                         OutlinedButton(
                             onClick = { showSqlModal = true },
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = Color.White,
+                                contentColor = Navy900
+                            ),
+                            border = BorderStroke(1.5.dp, Navy900),
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.fillMaxWidth().height(46.dp)
                         ) {
-                            Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.ContentCopy, contentDescription = null, tint = Navy900, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Afficher et copier le script SQL DDL", fontSize = 12.sp)
+                            Text("Afficher et copier le script SQL DDL", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = Navy900)
                         }
                     }
                 }
@@ -1536,13 +1627,17 @@ fun SupabaseSqlModal(onDismiss: () -> Unit) {
                     clipboard.setPrimaryClip(clip)
                     onDismiss()
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = Navy900),
-                shape = RoundedCornerShape(10.dp),
-                modifier = Modifier.fillMaxWidth().height(48.dp)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Navy900,
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(12.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
+                modifier = Modifier.fillMaxWidth().height(50.dp)
             ) {
-                Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.ContentCopy, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("Copier tout le script SQL", fontWeight = FontWeight.Bold)
+                Text("Copier tout le script SQL", fontWeight = FontWeight.ExtraBold, color = Color.White, fontSize = 14.sp)
             }
         }
     }
@@ -1615,13 +1710,17 @@ fun ServicesSubScreen(viewModel: CarWashViewModel, modifier: Modifier = Modifier
             Text("${services.size} service(s) configuré(s)", color = TextSecondary, fontSize = 13.sp)
             Button(
                 onClick = { showAddService = true },
-                colors = ButtonDefaults.buttonColors(containerColor = Navy900),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Navy900,
+                    contentColor = Color.White
+                ),
                 shape = RoundedCornerShape(8.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                 modifier = Modifier.height(36.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Ajouter", fontSize = 12.sp)
+                Text("Ajouter", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
         }
 
@@ -1698,30 +1797,36 @@ fun AddServiceSheet(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Nom du service * (ex: Lavage VIP Moteur)") },
+                label = { Text("Nom du service * (ex: Lavage VIP Moteur)", fontWeight = FontWeight.SemiBold) },
+                textStyle = carWashInputTextStyle,
+                colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = priceText,
                 onValueChange = { priceText = it },
-                label = { Text("Prix *") },
+                label = { Text("Prix *", fontWeight = FontWeight.SemiBold) },
+                textStyle = carWashInputTextStyle,
+                colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = durationText,
                 onValueChange = { durationText = it },
-                label = { Text("Durée estimée (minutes)") },
+                label = { Text("Durée estimée (minutes)", fontWeight = FontWeight.SemiBold) },
+                textStyle = carWashInputTextStyle,
+                colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -1733,11 +1838,15 @@ fun AddServiceSheet(
                         onSave(name, p, d)
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = Navy900),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Navy900,
+                    contentColor = Color.White
+                ),
                 shape = RoundedCornerShape(12.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                 modifier = Modifier.fillMaxWidth().height(50.dp)
             ) {
-                Text("Enregistrer le service", fontWeight = FontWeight.Bold)
+                Text("Enregistrer le service", fontWeight = FontWeight.ExtraBold, color = Color.White, fontSize = 15.sp)
             }
         }
     }

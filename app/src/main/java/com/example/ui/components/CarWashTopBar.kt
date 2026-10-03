@@ -22,11 +22,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CloudDone
-import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Sync
@@ -43,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -73,7 +75,7 @@ fun CarWashTopBar(
     onSyncClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val dateStr = SimpleDateFormat("EEEE d MMMM", Locale.FRANCE).format(Date())
+    val dateStr = SimpleDateFormat("EEE d MMMM", Locale.FRANCE).format(Date())
         .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.FRANCE) else it.toString() }
 
     val infiniteTransition = rememberInfiniteTransition(label = "sync_rotation")
@@ -87,221 +89,244 @@ fun CarWashTopBar(
         label = "rotation"
     )
 
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(
-                Brush.horizontalGradient(
-                    colors = listOf(
-                        Color(0xFF070E1B),
-                        Color(0xFF0F1E36),
-                        Color(0xFF091424)
-                    )
-                )
-            )
-            .border(
-                BorderStroke(
-                    1.dp,
+    Surface(
+        color = Color(0xFF091424),
+        shadowElevation = 6.dp,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            Color.White.copy(alpha = 0.08f),
-                            Color.Transparent
+                            Color(0xFF0F213A),
+                            Color(0xFF081220)
                         )
                     )
                 )
-            )
-            .padding(horizontal = 16.dp, vertical = 10.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 14.dp)
         ) {
-            // Left: Logo & Company Name with Date
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFF1E293B))
-                        .border(1.5.dp, BlueLight.copy(alpha = 0.6f), CircleShape)
+                // Left: Modern App Logo & Brand Title
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.img_carwash_logo),
-                        contentDescription = "Logo",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
+                    // Elevated Modern Logo with Glow
+                    Box(
+                        modifier = Modifier
+                            .size(46.dp)
+                            .shadow(8.dp, RoundedCornerShape(14.dp))
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(Color(0xFF0B192C))
+                            .border(
+                                BorderStroke(
+                                    1.5.dp,
+                                    Brush.linearGradient(
+                                        listOf(Color(0xFF38BDF8), Color(0xFF0284C7))
+                                    )
+                                ),
+                                RoundedCornerShape(14.dp)
+                            )
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.img_carwash_logo),
+                            contentDescription = "Car Wash Pro Logo",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
 
-                Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
 
-                Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column {
                         Text(
-                            text = company?.name ?: "Car Wash Pro",
+                            text = company?.name?.ifBlank { "Car Wash Pro" } ?: "Car Wash Pro",
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.ExtraBold,
                                 color = Color.White,
-                                fontSize = 16.sp,
-                                letterSpacing = 0.2.sp
+                                fontSize = 17.sp,
+                                letterSpacing = (-0.2).sp
                             ),
                             maxLines = 1
                         )
-                    }
-                    Text(
-                        text = dateStr,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            color = Color.White.copy(alpha = 0.65f),
-                            fontSize = 11.sp
-                        )
-                    )
-                }
-            }
-
-            // Right: Interactive Supabase/SQLite Cloud Pill + Employee + Notifications
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(7.dp)
-            ) {
-                // SQLite / Supabase Sync status pill
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = when {
-                        syncState == SyncState.SYNCING -> Color(0xFF1E3A8A).copy(alpha = 0.8f)
-                        isOnline -> Color(0xFF064E3B).copy(alpha = 0.85f)
-                        else -> Color(0xFF78350F).copy(alpha = 0.85f)
-                    },
-                    border = BorderStroke(
-                        1.dp,
-                        when {
-                            syncState == SyncState.SYNCING -> BlueLight.copy(alpha = 0.5f)
-                            isOnline -> Color(0xFF34D399).copy(alpha = 0.5f)
-                            else -> Color(0xFFFBBF24).copy(alpha = 0.5f)
-                        }
-                    ),
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .clickable(onClick = onSyncClick)
-                        .testTag("sync_status_chip")
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        when {
-                            syncState == SyncState.SYNCING -> {
-                                Icon(
-                                    imageVector = Icons.Default.Sync,
-                                    contentDescription = "Synchronisation",
-                                    tint = BlueLight,
-                                    modifier = Modifier
-                                        .size(13.dp)
-                                        .rotate(rotation)
-                                )
-                                Text(
-                                    text = "Synchro",
-                                    color = BlueLight,
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                            isOnline -> {
-                                Box(
-                                    modifier = Modifier
-                                        .size(7.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(0xFF34D399))
-                                )
-                                Text(
-                                    text = "Supabase",
-                                    color = Color(0xFFA7F3D0),
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                            else -> {
-                                Box(
-                                    modifier = Modifier
-                                        .size(7.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(0xFFFBBF24))
-                                )
-                                Text(
-                                    text = "SQLite",
-                                    color = Color(0xFFFDE68A),
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Employee Profile Badge
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = Color(0xFF1B2A44).copy(alpha = 0.9f),
-                    border = BorderStroke(1.dp, BlueLight.copy(alpha = 0.3f)),
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .clickable(onClick = onEmployeeClick)
-                        .testTag("employee_profile_chip")
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Utilisateur",
-                            tint = BlueLight,
-                            modifier = Modifier.size(13.dp)
-                        )
-                        Text(
-                            text = currentEmployee?.name?.split(" ")?.firstOrNull() ?: "Admin",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(CircleShape)
+                                    .background(if (isOnline) Color(0xFF22C55E) else Color(0xFFF59E0B))
                             )
-                        )
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(
+                                text = "$dateStr • ${if (isOnline) "Connecté" else "Local"}",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    color = Color(0xFF94A3B8),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                maxLines = 1
+                            )
+                        }
                     }
                 }
 
-                // Notification Bell with Red Badge
-                IconButton(
-                    onClick = onNotificationsClick,
-                    modifier = Modifier
-                        .size(36.dp)
-                        .testTag("notifications_button")
+                // Right: Quick Action Controls (Cloud Sync, Employee Pill, Notifications)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    BadgedBox(
-                        badge = {
-                            if (unreadCount > 0) {
-                                Badge(
-                                    containerColor = Color(0xFFEF4444),
-                                    contentColor = Color.White
-                                ) {
+                    // Sync Pill (Glassmorphic)
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = when {
+                            syncState == SyncState.SYNCING -> Color(0xFF1E3A8A)
+                            isOnline -> Color(0xFF064E3B)
+                            else -> Color(0xFF78350F)
+                        },
+                        border = BorderStroke(
+                            1.dp,
+                            when {
+                                syncState == SyncState.SYNCING -> Color(0xFF60A5FA)
+                                isOnline -> Color(0xFF34D399)
+                                else -> Color(0xFFFBBF24)
+                            }
+                        ),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable(onClick = onSyncClick)
+                            .testTag("sync_status_chip")
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp)
+                        ) {
+                            when {
+                                syncState == SyncState.SYNCING -> {
+                                    Icon(
+                                        imageVector = Icons.Default.Sync,
+                                        contentDescription = "Synchronisation",
+                                        tint = Color(0xFF93C5FD),
+                                        modifier = Modifier
+                                            .size(14.dp)
+                                            .rotate(rotation)
+                                    )
                                     Text(
-                                        text = if (unreadCount > 9) "9+" else unreadCount.toString(),
-                                        fontSize = 9.sp
+                                        text = "Sync",
+                                        color = Color.White,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                isOnline -> {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(7.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFF34D399))
+                                    )
+                                    Text(
+                                        text = "Cloud",
+                                        color = Color(0xFFA7F3D0),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                else -> {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(7.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFFFBBF24))
+                                    )
+                                    Text(
+                                        text = "SQLite",
+                                        color = Color(0xFFFDE68A),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
                                     )
                                 }
                             }
                         }
+                    }
+
+                    // User / Employee Badge
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFF1E293B),
+                        border = BorderStroke(1.dp, Color(0xFF334155)),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable(onClick = onEmployeeClick)
+                            .testTag("employee_profile_chip")
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = "Notifications",
-                            tint = Color.White,
-                            modifier = Modifier.size(19.dp)
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = "Employé",
+                                tint = Color(0xFF38BDF8),
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Text(
+                                text = currentEmployee?.name?.split(" ")?.firstOrNull() ?: "Admin",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 11.sp
+                                )
+                            )
+                        }
+                    }
+
+                    // Notification Bell Button
+                    Surface(
+                        shape = CircleShape,
+                        color = Color(0xFF1E293B),
+                        border = BorderStroke(1.dp, Color(0xFF334155)),
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        IconButton(
+                            onClick = onNotificationsClick,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .testTag("notifications_button")
+                        ) {
+                            BadgedBox(
+                                badge = {
+                                    if (unreadCount > 0) {
+                                        Badge(
+                                            containerColor = Color(0xFFEF4444),
+                                            contentColor = Color.White
+                                        ) {
+                                            Text(
+                                                text = if (unreadCount > 9) "9+" else unreadCount.toString(),
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Notifications,
+                                    contentDescription = "Notifications",
+                                    tint = Color(0xFFF1F5F9),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }

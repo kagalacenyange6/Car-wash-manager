@@ -57,6 +57,8 @@ import com.example.data.model.Customer
 import com.example.data.model.Vehicle
 import com.example.ui.CarWashViewModel
 import com.example.ui.components.EmptyStateView
+import com.example.ui.components.carWashInputTextStyle
+import com.example.ui.components.carWashTextFieldColors
 import com.example.ui.theme.BlueAccent
 import com.example.ui.theme.BorderLight
 import com.example.ui.theme.Navy900
@@ -116,16 +118,19 @@ fun VehiclesScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("vehicles_search_input"),
-                placeholder = { Text("Rechercher (Plaque, Modèle, Propriétaire)...", fontSize = 14.sp) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextMuted) },
+                placeholder = {
+                    Text(
+                        "Rechercher (Plaque, Modèle, Propriétaire)...",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF64748B)
+                    )
+                },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = BlueAccent) },
                 singleLine = true,
+                textStyle = carWashInputTextStyle,
                 shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = BlueAccent,
-                    unfocusedBorderColor = BorderLight,
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White
-                )
+                colors = carWashTextFieldColors()
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -237,13 +242,19 @@ fun VehicleCard(
 
             Button(
                 onClick = onLaunchWash,
-                colors = ButtonDefaults.buttonColors(containerColor = Navy900.copy(alpha = 0.07f)),
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.fillMaxWidth().height(38.dp)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = BlueAccent,
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(10.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(42.dp)
             ) {
-                Icon(Icons.Default.LocalCarWash, contentDescription = null, modifier = Modifier.size(16.dp), tint = Navy900)
+                Icon(Icons.Default.LocalCarWash, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.White)
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("Lancer un lavage", color = Navy900, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text("Lancer un lavage", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
             }
         }
     }
@@ -322,10 +333,12 @@ fun AddVehicleSheet(
             OutlinedTextField(
                 value = plate,
                 onValueChange = { plate = it.uppercase() },
-                label = { Text("Plaque d'immatriculation *") },
+                label = { Text("Plaque d'immatriculation *", fontWeight = FontWeight.SemiBold) },
+                textStyle = carWashInputTextStyle,
+                colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth().testTag("add_vehicle_plate_input"),
                 singleLine = true,
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -334,19 +347,23 @@ fun AddVehicleSheet(
                 OutlinedTextField(
                     value = brand,
                     onValueChange = { brand = it },
-                    label = { Text("Marque") },
+                    label = { Text("Marque", fontWeight = FontWeight.SemiBold) },
+                    textStyle = carWashInputTextStyle,
+                    colors = carWashTextFieldColors(),
                     modifier = Modifier.weight(1f),
                     singleLine = true,
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(12.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 OutlinedTextField(
                     value = model,
                     onValueChange = { model = it },
-                    label = { Text("Modèle") },
+                    label = { Text("Modèle", fontWeight = FontWeight.SemiBold) },
+                    textStyle = carWashInputTextStyle,
+                    colors = carWashTextFieldColors(),
                     modifier = Modifier.weight(1f),
                     singleLine = true,
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(12.dp)
                 )
             }
 
@@ -358,11 +375,15 @@ fun AddVehicleSheet(
                         onSave(selectedCustomerId, plate, brand.ifBlank { "Auto" }, model.ifBlank { "Modèle" }, color, vehicleType, "")
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = Navy900),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Navy900,
+                    contentColor = Color.White
+                ),
                 shape = RoundedCornerShape(12.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                 modifier = Modifier.fillMaxWidth().height(50.dp).testTag("save_vehicle_button")
             ) {
-                Text("Enregistrer le véhicule", fontWeight = FontWeight.Bold)
+                Text("Enregistrer le véhicule", fontWeight = FontWeight.ExtraBold, color = Color.White, fontSize = 15.sp)
             }
         }
     }

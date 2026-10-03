@@ -178,11 +178,11 @@ fun HomeScreen(
                         Button(
                             onClick = { viewModel.startNewOrder() },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = BlueLight,
-                                contentColor = Color(0xFF07101E)
+                                containerColor = BlueAccent,
+                                contentColor = Color.White
                             ),
                             shape = RoundedCornerShape(14.dp),
-                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
+                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(52.dp)
@@ -191,16 +191,16 @@ fun HomeScreen(
                             Icon(
                                 imageVector = Icons.Default.Add,
                                 contentDescription = null,
+                                tint = Color.White,
                                 modifier = Modifier.size(22.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "Nouvelle prestation",
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.ExtraBold,
-                                    fontSize = 16.sp,
-                                    letterSpacing = 0.3.sp
-                                )
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color.White,
+                                fontSize = 16.sp,
+                                letterSpacing = 0.2.sp
                             )
                         }
 
@@ -213,7 +213,8 @@ fun HomeScreen(
                         ) {
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
-                                color = Color.White.copy(alpha = 0.08f),
+                                color = Color(0xFF1E293B),
+                                border = BorderStroke(1.dp, Color(0xFF334155)),
                                 modifier = Modifier
                                     .weight(1f)
                                     .clickable { viewModel.openPlusScreen(PlusScreen.QUEUE) }
@@ -226,22 +227,23 @@ fun HomeScreen(
                                     Icon(
                                         imageVector = Icons.Default.FormatListBulleted,
                                         contentDescription = null,
-                                        tint = Color.White.copy(alpha = 0.85f),
-                                        modifier = Modifier.size(15.dp)
+                                        tint = Color(0xFF38BDF8),
+                                        modifier = Modifier.size(16.dp)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
                                         text = "File (${queueOrders.size})",
-                                        color = Color.White.copy(alpha = 0.9f),
+                                        color = Color.White,
                                         fontSize = 12.sp,
-                                        fontWeight = FontWeight.Medium
+                                        fontWeight = FontWeight.Bold
                                     )
                                 }
                             }
 
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
-                                color = Color.White.copy(alpha = 0.08f),
+                                color = Color(0xFF1E293B),
+                                border = BorderStroke(1.dp, Color(0xFF334155)),
                                 modifier = Modifier
                                     .weight(1f)
                                     .clickable { viewModel.openPlusScreen(PlusScreen.PAYMENTS) }
@@ -254,15 +256,15 @@ fun HomeScreen(
                                     Icon(
                                         imageVector = Icons.Default.PointOfSale,
                                         contentDescription = null,
-                                        tint = Color.White.copy(alpha = 0.85f),
-                                        modifier = Modifier.size(15.dp)
+                                        tint = Color(0xFF34D399),
+                                        modifier = Modifier.size(16.dp)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = "Encaissements",
-                                        color = Color.White.copy(alpha = 0.9f),
+                                        text = "Caisse & Ventes",
+                                        color = Color.White,
                                         fontSize = 12.sp,
-                                        fontWeight = FontWeight.Medium
+                                        fontWeight = FontWeight.Bold
                                     )
                                 }
                             }
@@ -522,32 +524,40 @@ fun QueueOrderCard(
                 OrderStatus.PENDING.name -> {
                     Button(
                         onClick = onStart,
-                        colors = ButtonDefaults.buttonColors(containerColor = StatusInProgress),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF0284C7),
+                            contentColor = Color.White
+                        ),
                         shape = RoundedCornerShape(10.dp),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(44.dp)
                             .testTag("action_start_${order.id}")
                     ) {
-                        Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Démarrer le lavage", fontWeight = FontWeight.Bold)
+                        Text("Démarrer le lavage", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
                     }
                 }
 
                 OrderStatus.IN_PROGRESS.name -> {
                     Button(
                         onClick = onFinish,
-                        colors = ButtonDefaults.buttonColors(containerColor = StatusCompleted),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF059669),
+                            contentColor = Color.White
+                        ),
                         shape = RoundedCornerShape(10.dp),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(44.dp)
                             .testTag("action_finish_${order.id}")
                     ) {
-                        Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Terminer le lavage", fontWeight = FontWeight.Bold)
+                        Text("Terminer le lavage", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
                     }
                 }
 
@@ -559,24 +569,33 @@ fun QueueOrderCard(
                         if (order.paidAmount < order.finalAmount) {
                             Button(
                                 onClick = onPay,
-                                colors = ButtonDefaults.buttonColors(containerColor = BlueAccent),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF0F172A),
+                                    contentColor = Color.White
+                                ),
                                 shape = RoundedCornerShape(10.dp),
+                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(44.dp)
                                     .testTag("action_pay_${order.id}")
                             ) {
-                                Text("Encaisser", fontWeight = FontWeight.Bold)
+                                Text("Encaisser", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
                             }
                         }
                         OutlinedButton(
                             onClick = onPrint,
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = Color.White,
+                                contentColor = Color(0xFF0F172A)
+                            ),
+                            border = BorderStroke(1.5.dp, Color(0xFF0F172A)),
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier.height(44.dp)
                         ) {
-                            Icon(Icons.Default.Print, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Print, contentDescription = null, tint = Color(0xFF0F172A), modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Ticket")
+                            Text("Ticket", fontWeight = FontWeight.ExtraBold, color = Color(0xFF0F172A), fontSize = 14.sp)
                         }
                     }
                 }
@@ -650,10 +669,15 @@ fun RecentActivityCard(
                 if (order.paidAmount < order.finalAmount) {
                     OutlinedButton(
                         onClick = onPay,
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = Color.White,
+                            contentColor = BlueAccent
+                        ),
+                        border = BorderStroke(1.5.dp, BlueAccent),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.height(36.dp)
                     ) {
-                        Text("Payer", fontSize = 12.sp, color = BlueAccent)
+                        Text("Payer", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = BlueAccent)
                     }
                     Spacer(modifier = Modifier.width(4.dp))
                 }

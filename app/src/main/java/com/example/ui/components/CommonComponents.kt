@@ -17,12 +17,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,12 +37,19 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.ui.theme.BlueAccent
 import com.example.ui.theme.BorderLight
+import com.example.ui.theme.InputBorderDefault
+import com.example.ui.theme.InputBorderFocused
+import com.example.ui.theme.InputPlaceholderColor
+import com.example.ui.theme.InputTextColor
 import com.example.ui.theme.Navy900
 import com.example.ui.theme.StatusCompleted
 import com.example.ui.theme.StatusCompletedBg
@@ -228,6 +239,101 @@ fun EmptyStateView(
     }
 }
 
+@Composable
+fun carWashTextFieldColors() = OutlinedTextFieldDefaults.colors(
+    focusedTextColor = Color(0xFF0F172A),
+    unfocusedTextColor = Color(0xFF0F172A),
+    disabledTextColor = Color(0xFF64748B),
+    focusedContainerColor = Color.White,
+    unfocusedContainerColor = Color(0xFFFAFAFA),
+    disabledContainerColor = Color(0xFFF1F5F9),
+    cursorColor = BlueAccent,
+    focusedBorderColor = BlueAccent,
+    unfocusedBorderColor = Color(0xFF94A3B8),
+    disabledBorderColor = Color(0xFFE2E8F0),
+    focusedLabelColor = BlueAccent,
+    unfocusedLabelColor = Color(0xFF334155),
+    disabledLabelColor = Color(0xFF94A3B8),
+    focusedPlaceholderColor = Color(0xFF64748B),
+    unfocusedPlaceholderColor = Color(0xFF64748B),
+    focusedLeadingIconColor = BlueAccent,
+    unfocusedLeadingIconColor = Color(0xFF475569),
+    focusedTrailingIconColor = BlueAccent,
+    unfocusedTrailingIconColor = Color(0xFF475569)
+)
+
+val carWashInputTextStyle = TextStyle(
+    fontFamily = FontFamily.SansSerif,
+    fontWeight = FontWeight.SemiBold,
+    fontSize = 15.sp,
+    color = Color(0xFF0F172A),
+    letterSpacing = 0.15.sp
+)
+
+@Composable
+fun CarWashInputField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    placeholder: String? = null,
+    leadingIcon: ImageVector? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    singleLine: Boolean = true,
+    enabled: Boolean = true,
+    readOnly: Boolean = false,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    testTag: String? = null
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = {
+            Text(
+                text = label,
+                style = TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+            )
+        },
+        placeholder = if (placeholder != null) {
+            {
+                Text(
+                    text = placeholder,
+                    style = TextStyle(
+                        color = Color(0xFF64748B),
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 14.sp
+                    )
+                )
+            }
+        } else null,
+        leadingIcon = if (leadingIcon != null) {
+            {
+                Icon(
+                    imageVector = leadingIcon,
+                    contentDescription = null,
+                    tint = BlueAccent,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        } else null,
+        trailingIcon = trailingIcon,
+        singleLine = singleLine,
+        enabled = enabled,
+        readOnly = readOnly,
+        visualTransformation = visualTransformation,
+        keyboardOptions = keyboardOptions,
+        keyboardActions = keyboardActions,
+        textStyle = carWashInputTextStyle,
+        colors = carWashTextFieldColors(),
+        shape = RoundedCornerShape(12.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (testTag != null) Modifier.testTag(testTag) else Modifier)
+    )
+}
+
 /**
  * High-craft Primary Button with gradient depth and responsive state
  */
@@ -244,10 +350,10 @@ fun CarWashPrimaryButton(
         onClick = onClick,
         enabled = enabled && !isLoading,
         shape = RoundedCornerShape(14.dp),
-        color = if (enabled) Navy900 else Color(0xFFCBD5E1),
-        shadowElevation = if (enabled) 3.dp else 0.dp,
+        color = if (enabled) Navy900 else Color(0xFFE2E8F0),
+        shadowElevation = if (enabled) 4.dp else 0.dp,
         modifier = modifier
-            .height(50.dp)
+            .height(52.dp)
             .fillMaxWidth()
     ) {
         Box(
@@ -256,11 +362,11 @@ fun CarWashPrimaryButton(
                 .background(
                     if (enabled) {
                         Brush.horizontalGradient(
-                            listOf(Color(0xFF0F1E36), Color(0xFF1E3A8A))
+                            listOf(Color(0xFF0F1E36), Color(0xFF0284C7))
                         )
                     } else {
                         Brush.horizontalGradient(
-                            listOf(Color(0xFFCBD5E1), Color(0xFF94A3B8))
+                            listOf(Color(0xFFE2E8F0), Color(0xFFCBD5E1))
                         )
                     }
                 ),
@@ -281,18 +387,19 @@ fun CarWashPrimaryButton(
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = if (enabled) Color.White else Color(0xFF475569),
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                 }
                 Text(
                     text = text,
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
+                    style = TextStyle(
+                        fontFamily = FontFamily.SansSerif,
+                        color = if (enabled) Color.White else Color(0xFF475569),
+                        fontWeight = FontWeight.ExtraBold,
                         fontSize = 15.sp,
-                        letterSpacing = 0.3.sp
+                        letterSpacing = 0.2.sp
                     )
                 )
             }
@@ -315,10 +422,11 @@ fun CarWashSecondaryButton(
         onClick = onClick,
         enabled = enabled,
         shape = RoundedCornerShape(14.dp),
-        color = Color(0xFFF1F5F9),
-        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+        color = Color.White,
+        border = BorderStroke(1.5.dp, Navy900),
+        shadowElevation = 1.dp,
         modifier = modifier
-            .height(50.dp)
+            .height(52.dp)
     ) {
         Row(
             modifier = Modifier
@@ -332,15 +440,16 @@ fun CarWashSecondaryButton(
                     imageVector = icon,
                     contentDescription = null,
                     tint = Navy900,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(19.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
             }
             Text(
                 text = text,
-                style = MaterialTheme.typography.labelLarge.copy(
+                style = TextStyle(
+                    fontFamily = FontFamily.SansSerif,
                     color = Navy900,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.ExtraBold,
                     fontSize = 14.sp
                 )
             )

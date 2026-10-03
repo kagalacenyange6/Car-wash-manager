@@ -56,6 +56,8 @@ import com.example.data.model.WashOrder
 import com.example.ui.CarWashViewModel
 import com.example.ui.components.EmptyStateView
 import com.example.ui.components.StatusChip
+import com.example.ui.components.carWashInputTextStyle
+import com.example.ui.components.carWashTextFieldColors
 import com.example.ui.theme.BlueAccent
 import com.example.ui.theme.BorderLight
 import com.example.ui.theme.Navy900
@@ -131,16 +133,19 @@ fun OrdersScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("orders_search_input"),
-                placeholder = { Text("Rechercher (Client, Plaque, CW-000...)", fontSize = 14.sp) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextMuted) },
+                placeholder = {
+                    Text(
+                        "Rechercher (Client, Plaque, CW-000...)",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF64748B)
+                    )
+                },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = BlueAccent) },
                 singleLine = true,
+                textStyle = carWashInputTextStyle,
                 shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = BlueAccent,
-                    unfocusedBorderColor = BorderLight,
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White
-                )
+                colors = carWashTextFieldColors()
             )
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -319,36 +324,45 @@ fun OrderItemCard(
                     OrderStatus.PENDING.name -> {
                         Button(
                             onClick = onStart,
-                            colors = ButtonDefaults.buttonColors(containerColor = StatusInProgress),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF0284C7),
+                                contentColor = Color.White
+                            ),
                             shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.weight(1f).height(40.dp)
+                            modifier = Modifier.weight(1f).height(42.dp)
                         ) {
-                            Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Démarrer", fontSize = 12.sp)
+                            Text("Démarrer", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         }
                     }
                     OrderStatus.IN_PROGRESS.name -> {
                         Button(
                             onClick = onFinish,
-                            colors = ButtonDefaults.buttonColors(containerColor = StatusCompleted),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF059669),
+                                contentColor = Color.White
+                            ),
                             shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.weight(1f).height(40.dp)
+                            modifier = Modifier.weight(1f).height(42.dp)
                         ) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Terminer", fontSize = 12.sp)
+                            Text("Terminer", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         }
                     }
                     else -> {
                         if (order.paidAmount < order.finalAmount) {
                             Button(
                                 onClick = onPay,
-                                colors = ButtonDefaults.buttonColors(containerColor = BlueAccent),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF0F172A),
+                                    contentColor = Color.White
+                                ),
                                 shape = RoundedCornerShape(8.dp),
-                                modifier = Modifier.weight(1f).height(40.dp)
+                                modifier = Modifier.weight(1f).height(42.dp)
                             ) {
-                                Text("Encaisser solde", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                Text("Encaisser solde", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             }
                         }
                     }
@@ -356,12 +370,17 @@ fun OrderItemCard(
 
                 OutlinedButton(
                     onClick = onPrint,
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = Color.White,
+                        contentColor = Color(0xFF0F172A)
+                    ),
+                    border = BorderStroke(1.5.dp, Color(0xFF0F172A)),
                     shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.height(40.dp)
+                    modifier = Modifier.height(42.dp)
                 ) {
-                    Icon(Icons.Default.Print, contentDescription = null, modifier = Modifier.size(16.dp), tint = Navy900)
+                    Icon(Icons.Default.Print, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color(0xFF0F172A))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Ticket POS", fontSize = 12.sp, color = Navy900)
+                    Text("Ticket POS", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0F172A))
                 }
             }
         }

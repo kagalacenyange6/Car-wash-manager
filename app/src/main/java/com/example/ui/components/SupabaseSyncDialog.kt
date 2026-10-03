@@ -243,32 +243,35 @@ fun SupabaseSyncDialog(
                         onClick = { viewModel.triggerSync() },
                         enabled = syncState != SyncState.SYNCING,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isOnline) BlueLight else Color(0xFFF59E0B),
-                            contentColor = Color(0xFF0F172A)
+                            containerColor = if (isOnline) Color(0xFF0284C7) else Color(0xFFD97706),
+                            contentColor = Color.White
                         ),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(44.dp)
+                            .height(46.dp)
                     ) {
                         if (syncState == SyncState.SYNCING) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(18.dp),
-                                color = Color(0xFF0F172A),
-                                strokeWidth = 2.dp
+                                color = Color.White,
+                                strokeWidth = 2.5.dp
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Synchronisation en cours...", fontWeight = FontWeight.Bold)
+                            Text("Synchronisation en cours...", fontWeight = FontWeight.ExtraBold, color = Color.White, fontSize = 13.sp)
                         } else {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
                                 contentDescription = null,
+                                tint = Color.White,
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = if (isOnline) "Synchroniser avec Supabase" else "Forcer la vérification réseau",
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color.White,
+                                fontSize = 13.sp
                             )
                         }
                     }
@@ -297,18 +300,14 @@ fun SupabaseSyncDialog(
             OutlinedTextField(
                 value = urlInput,
                 onValueChange = { urlInput = it },
-                label = { Text("URL Supabase (ex: https://xxx.supabase.co)") },
+                label = { Text("URL Supabase (ex: https://xxx.supabase.co)", fontWeight = FontWeight.SemiBold) },
                 leadingIcon = {
                     Icon(Icons.Default.Link, contentDescription = null, tint = BlueAccent)
                 },
+                textStyle = carWashInputTextStyle,
+                colors = carWashTextFieldColors(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = BlueAccent,
-                    unfocusedBorderColor = BorderLight,
-                    focusedContainerColor = Color(0xFFF8FAFC),
-                    unfocusedContainerColor = Color(0xFFF8FAFC)
-                ),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -318,18 +317,14 @@ fun SupabaseSyncDialog(
             OutlinedTextField(
                 value = anonKeyInput,
                 onValueChange = { anonKeyInput = it },
-                label = { Text("Clé Anon / API Key Supabase") },
+                label = { Text("Clé Anon / API Key Supabase", fontWeight = FontWeight.SemiBold) },
                 leadingIcon = {
                     Icon(Icons.Default.Key, contentDescription = null, tint = BlueAccent)
                 },
+                textStyle = carWashInputTextStyle,
+                colors = carWashTextFieldColors(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = BlueAccent,
-                    unfocusedBorderColor = BorderLight,
-                    focusedContainerColor = Color(0xFFF8FAFC),
-                    unfocusedContainerColor = Color(0xFFF8FAFC)
-                ),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -405,6 +400,11 @@ fun SupabaseSyncDialog(
                             isTestingConnection = false
                         }
                     },
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = Color.White,
+                        contentColor = Navy900
+                    ),
+                    border = BorderStroke(1.5.dp, Navy900),
                     enabled = !isTestingConnection,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
@@ -412,9 +412,9 @@ fun SupabaseSyncDialog(
                         .height(48.dp)
                 ) {
                     if (isTestingConnection) {
-                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), color = Navy900, strokeWidth = 2.dp)
                     } else {
-                        Text("Tester", fontWeight = FontWeight.SemiBold, color = Navy900)
+                        Text("Tester", fontWeight = FontWeight.ExtraBold, color = Navy900, fontSize = 14.sp)
                     }
                 }
 
@@ -428,13 +428,17 @@ fun SupabaseSyncDialog(
                         viewModel.triggerSync()
                         onDismiss()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Navy900),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Navy900,
+                        contentColor = Color.White
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
                         .weight(1.3f)
                         .height(48.dp)
                 ) {
-                    Text("Enregistrer", fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Enregistrer", fontWeight = FontWeight.ExtraBold, color = Color.White, fontSize = 14.sp)
                 }
             }
         }

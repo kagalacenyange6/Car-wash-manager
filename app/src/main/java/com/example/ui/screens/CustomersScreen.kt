@@ -67,6 +67,8 @@ import com.example.data.model.Vehicle
 import com.example.data.model.WashOrder
 import com.example.ui.CarWashViewModel
 import com.example.ui.components.EmptyStateView
+import com.example.ui.components.carWashInputTextStyle
+import com.example.ui.components.carWashTextFieldColors
 import com.example.ui.theme.BlueAccent
 import com.example.ui.theme.BorderLight
 import com.example.ui.theme.Navy900
@@ -130,16 +132,19 @@ fun CustomersScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("customers_search_input"),
-                placeholder = { Text("Rechercher par nom ou numéro...", fontSize = 14.sp) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextMuted) },
+                placeholder = {
+                    Text(
+                        "Rechercher par nom ou numéro...",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF64748B)
+                    )
+                },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = BlueAccent) },
                 singleLine = true,
+                textStyle = carWashInputTextStyle,
                 shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = BlueAccent,
-                    unfocusedBorderColor = BorderLight,
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White
-                )
+                colors = carWashTextFieldColors()
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -347,15 +352,19 @@ fun CustomerCard(
             // Action: Nouvelle prestation
             Button(
                 onClick = onNewOrder,
-                colors = ButtonDefaults.buttonColors(containerColor = Navy900.copy(alpha = 0.06f)),
-                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = BlueAccent,
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(10.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(38.dp)
+                    .height(42.dp)
             ) {
-                Icon(Icons.Default.LocalCarWash, contentDescription = null, modifier = Modifier.size(16.dp), tint = Navy900)
+                Icon(Icons.Default.LocalCarWash, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.White)
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("Lancer prestation", color = Navy900, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text("Lancer prestation", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold)
             }
         }
     }
@@ -403,40 +412,48 @@ fun AddCustomerSheet(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Nom complet *") },
+                label = { Text("Nom complet *", fontWeight = FontWeight.SemiBold) },
+                textStyle = carWashInputTextStyle,
+                colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth().testTag("add_customer_name"),
                 singleLine = true,
-                shape = RoundedCornerShape(10.dp)
+                shape = RoundedCornerShape(12.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
                 value = phone,
                 onValueChange = { phone = it },
-                label = { Text("Téléphone *") },
+                label = { Text("Téléphone *", fontWeight = FontWeight.SemiBold) },
+                textStyle = carWashInputTextStyle,
+                colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth().testTag("add_customer_phone"),
                 singleLine = true,
-                shape = RoundedCornerShape(10.dp)
+                shape = RoundedCornerShape(12.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
                 value = address,
                 onValueChange = { address = it },
-                label = { Text("Adresse / Quartier (optionnel)") },
+                label = { Text("Adresse / Quartier (optionnel)", fontWeight = FontWeight.SemiBold) },
+                textStyle = carWashInputTextStyle,
+                colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                shape = RoundedCornerShape(10.dp)
+                shape = RoundedCornerShape(12.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
                 value = notes,
                 onValueChange = { notes = it },
-                label = { Text("Notes (optionnel)") },
+                label = { Text("Notes (optionnel)", fontWeight = FontWeight.SemiBold) },
+                textStyle = carWashInputTextStyle,
+                colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                shape = RoundedCornerShape(10.dp)
+                shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(18.dp))
@@ -447,11 +464,15 @@ fun AddCustomerSheet(
                         onSave(name, phone, address, notes)
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = Navy900),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Navy900,
+                    contentColor = Color.White
+                ),
                 shape = RoundedCornerShape(12.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                 modifier = Modifier.fillMaxWidth().height(50.dp).testTag("save_customer_button")
             ) {
-                Text("Enregistrer le client", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Text("Enregistrer le client", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
             }
         }
     }
@@ -551,11 +572,15 @@ fun CustomerDetailSheet(
 
             Button(
                 onClick = onNewOrder,
-                colors = ButtonDefaults.buttonColors(containerColor = Navy900),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Navy900,
+                    contentColor = Color.White
+                ),
                 shape = RoundedCornerShape(12.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                 modifier = Modifier.fillMaxWidth().height(48.dp)
             ) {
-                Text("Nouvelle prestation pour ce client", fontWeight = FontWeight.Bold)
+                Text("Nouvelle prestation pour ce client", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
             }
         }
     }

@@ -228,19 +228,21 @@ fun PaymentBottomSheet(
                     amountInput = it
                     errorMessage = null
                 },
-                label = { Text("Montant à encaisser ($currency) *") },
+                label = { Text("Montant à encaisser ($currency) *", fontWeight = FontWeight.SemiBold) },
+                textStyle = carWashInputTextStyle,
+                colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth().testTag("payment_amount_input"),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
                 isError = errorMessage != null,
                 supportingText = {
                     if (errorMessage != null) {
-                        Text(errorMessage!!, color = Color(0xFFEF4444), fontSize = 12.sp)
+                        Text(errorMessage!!, color = Color(0xFFEF4444), fontSize = 12.sp, fontWeight = FontWeight.Medium)
                     } else {
-                        Text("Paiement partiel autorisé. Reste = Dette.", color = TextMuted, fontSize = 11.sp)
+                        Text("Paiement partiel autorisé. Reste = Dette.", color = Color(0xFF64748B), fontSize = 11.sp)
                     }
                 },
-                shape = RoundedCornerShape(10.dp)
+                shape = RoundedCornerShape(12.dp)
             )
 
             // Optional Reference input for Mobile Money or Card
@@ -249,11 +251,13 @@ fun PaymentBottomSheet(
                 OutlinedTextField(
                     value = referenceInput,
                     onValueChange = { referenceInput = it },
-                    label = { Text("N° de transaction / Référence (optionnel)") },
-                    placeholder = { Text("ex: M-PESA 892301") },
+                    label = { Text("N° de transaction / Référence (optionnel)", fontWeight = FontWeight.SemiBold) },
+                    placeholder = { Text("ex: M-PESA 892301", color = Color(0xFF64748B)) },
+                    textStyle = carWashInputTextStyle,
+                    colors = carWashTextFieldColors(),
                     modifier = Modifier.fillMaxWidth().testTag("payment_reference_input"),
                     singleLine = true,
-                    shape = RoundedCornerShape(10.dp)
+                    shape = RoundedCornerShape(12.dp)
                 )
             }
 
@@ -273,14 +277,18 @@ fun PaymentBottomSheet(
                     }
                     onConfirmPayment(enteredAmount, selectedMethod, referenceInput)
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = StatusCompleted),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF059669),
+                    contentColor = Color.White
+                ),
                 shape = RoundedCornerShape(12.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
                     .testTag("submit_payment_button")
             ) {
-                Text("Valider l'encaissement", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Text("Valider l'encaissement", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
             }
         }
     }
