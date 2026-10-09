@@ -37,14 +37,17 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.LocalCarWash
 import androidx.compose.material.icons.filled.MoneyOff
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -80,8 +83,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.Company
+import com.example.data.model.Employee
 import com.example.data.model.Expense
 import com.example.data.model.Product
+import com.example.data.model.StockMovement
 import com.example.data.model.WashService
 import com.example.ui.CarWashViewModel
 import com.example.ui.PlusScreen
@@ -123,6 +128,7 @@ fun PlusScreenView(
         PlusScreen.SETTINGS -> SettingsSubScreen(viewModel, modifier)
         PlusScreen.AUDIT_LOGS -> AuditLogsSubScreen(viewModel, modifier)
         PlusScreen.SERVICES_MGMT -> ServicesSubScreen(viewModel, modifier)
+        PlusScreen.ABOUT -> AboutSubScreen(viewModel, modifier)
     }
 }
 
@@ -573,6 +579,7 @@ fun AddExpenseSheet(
     var category by remember { mutableStateOf("Produits") }
     var amountText by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val categories = listOf("Produits", "Électricité / Eau", "Salaires", "Entretien matériel", "Loyer", "Autre")
 
@@ -584,7 +591,24 @@ fun AddExpenseSheet(
                 .padding(bottom = 32.dp)
         ) {
             Text("Nouvelle Dépense", fontWeight = FontWeight.Bold, color = Navy900, fontSize = 18.sp)
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (errorMessage != null) {
+                Surface(
+                    color = Color(0xFFFFE4E6),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = errorMessage ?: "",
+                        color = Color(0xFFE11D48),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             Text("Catégorie :", fontSize = 12.sp, color = TextSecondary)
             Spacer(modifier = Modifier.height(4.dp))
@@ -604,12 +628,16 @@ fun AddExpenseSheet(
             Spacer(modifier = Modifier.height(10.dp))
             OutlinedTextField(
                 value = amountText,
-                onValueChange = { amountText = it },
+                onValueChange = { 
+                    amountText = it 
+                    errorMessage = null
+                },
                 label = { Text("Montant *", fontWeight = FontWeight.SemiBold) },
                 textStyle = carWashInputTextStyle,
                 colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                isError = errorMessage != null && amountText.isBlank(),
                 shape = RoundedCornerShape(12.dp)
             )
 
@@ -628,10 +656,12 @@ fun AddExpenseSheet(
             Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = {
-                    val amt = amountText.replace(",", ".").toDoubleOrNull()
-                    if (amt != null && amt > 0) {
-                        onSave(category, amt, description)
+                    val amt = amountText.trim().replace(",", ".").toDoubleOrNull()
+                    if (amt == null || amt <= 0) {
+                        errorMessage = "Veuillez entrer un montant valide supérieur à 0"
+                        return@Button
                     }
+                    onSave(category, amt, description.trim())
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = StatusDebt,
@@ -865,6 +895,7 @@ fun AddProductSheet(
     var stockText by remember { mutableStateOf("10") }
     var unit by remember { mutableStateOf("L") }
     var minThText by remember { mutableStateOf("5") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Color.White) {
         Column(
@@ -874,16 +905,37 @@ fun AddProductSheet(
                 .padding(bottom = 32.dp)
         ) {
             Text("Nouveau Produit au Stock", fontWeight = FontWeight.Bold, color = Navy900, fontSize = 18.sp)
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (errorMessage != null) {
+                Surface(
+                    color = Color(0xFFFFE4E6),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = errorMessage ?: "",
+                        color = Color(0xFFE11D48),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             OutlinedTextField(
                 value = name,
-                onValueChange = { name = it },
+                onValueChange = { 
+                    name = it 
+                    errorMessage = null
+                },
                 label = { Text("Nom de l'article * (ex: Shampoing carrosserie)", fontWeight = FontWeight.SemiBold) },
                 textStyle = carWashInputTextStyle,
                 colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                isError = errorMessage != null && name.isBlank(),
                 shape = RoundedCornerShape(12.dp)
             )
 
@@ -927,11 +979,13 @@ fun AddProductSheet(
             Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = {
-                    val s = stockText.toDoubleOrNull() ?: 0.0
-                    val m = minThText.toDoubleOrNull() ?: 5.0
-                    if (name.isNotBlank()) {
-                        onSave(name, s, unit, m)
+                    if (name.trim().isBlank()) {
+                        errorMessage = "Veuillez renseigner le nom de l'article"
+                        return@Button
                     }
+                    val s = stockText.trim().replace(",", ".").toDoubleOrNull() ?: 0.0
+                    val m = minThText.trim().replace(",", ".").toDoubleOrNull() ?: 5.0
+                    onSave(name.trim(), s, unit.trim().ifBlank { "L" }, m)
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Navy900,
@@ -1040,6 +1094,7 @@ fun AddEmployeeSheet(
     var phone by remember { mutableStateOf("") }
     var role by remember { mutableStateOf("EMPLOYEE") }
     var pin by remember { mutableStateOf("1234") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Color.White) {
         Column(
@@ -1049,24 +1104,48 @@ fun AddEmployeeSheet(
                 .padding(bottom = 32.dp)
         ) {
             Text("Ajouter un Employé", fontWeight = FontWeight.Bold, color = Navy900, fontSize = 18.sp)
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (errorMessage != null) {
+                Surface(
+                    color = Color(0xFFFFE4E6),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = errorMessage ?: "",
+                        color = Color(0xFFE11D48),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             OutlinedTextField(
                 value = name,
-                onValueChange = { name = it },
+                onValueChange = { 
+                    name = it 
+                    errorMessage = null
+                },
                 label = { Text("Nom complet *", fontWeight = FontWeight.SemiBold) },
                 textStyle = carWashInputTextStyle,
                 colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                isError = errorMessage != null && name.isBlank(),
                 shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = phone,
-                onValueChange = { phone = it },
-                label = { Text("Téléphone *", fontWeight = FontWeight.SemiBold) },
+                onValueChange = { 
+                    phone = it 
+                    errorMessage = null
+                },
+                label = { Text("Téléphone (optionnel)", fontWeight = FontWeight.SemiBold) },
                 textStyle = carWashInputTextStyle,
                 colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth(),
@@ -1104,9 +1183,13 @@ fun AddEmployeeSheet(
             Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = {
-                    if (name.isNotBlank()) {
-                        onSave(name, "${name.lowercase().replace(" ", "")}@carwash.com", phone, role, pin)
+                    if (name.trim().isBlank()) {
+                        errorMessage = "Veuillez renseigner le nom complet de l'employé"
+                        return@Button
                     }
+                    val cleanPhone = phone.trim().ifBlank { "-" }
+                    val cleanPin = pin.trim().ifBlank { "1234" }
+                    onSave(name.trim(), "${name.trim().lowercase().replace(" ", "")}@carwash.com", cleanPhone, role, cleanPin)
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Navy900,
@@ -1783,6 +1866,7 @@ fun AddServiceSheet(
     var name by remember { mutableStateOf("") }
     var priceText by remember { mutableStateOf("") }
     var durationText by remember { mutableStateOf("25") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Color.White) {
         Column(
@@ -1792,28 +1876,53 @@ fun AddServiceSheet(
                 .padding(bottom = 32.dp)
         ) {
             Text("Nouveau Service de Lavage", fontWeight = FontWeight.Bold, color = Navy900, fontSize = 18.sp)
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (errorMessage != null) {
+                Surface(
+                    color = Color(0xFFFFE4E6),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = errorMessage ?: "",
+                        color = Color(0xFFE11D48),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             OutlinedTextField(
                 value = name,
-                onValueChange = { name = it },
+                onValueChange = { 
+                    name = it 
+                    errorMessage = null
+                },
                 label = { Text("Nom du service * (ex: Lavage VIP Moteur)", fontWeight = FontWeight.SemiBold) },
                 textStyle = carWashInputTextStyle,
                 colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                isError = errorMessage != null && name.isBlank(),
                 shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = priceText,
-                onValueChange = { priceText = it },
+                onValueChange = { 
+                    priceText = it 
+                    errorMessage = null
+                },
                 label = { Text("Prix *", fontWeight = FontWeight.SemiBold) },
                 textStyle = carWashInputTextStyle,
                 colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                isError = errorMessage != null && (priceText.isBlank() || priceText.replace(",", ".").toDoubleOrNull() == null),
                 shape = RoundedCornerShape(12.dp)
             )
 
@@ -1832,11 +1941,17 @@ fun AddServiceSheet(
             Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = {
-                    val p = priceText.replace(",", ".").toDoubleOrNull()
-                    val d = durationText.toIntOrNull() ?: 20
-                    if (name.isNotBlank() && p != null && p > 0) {
-                        onSave(name, p, d)
+                    if (name.trim().isBlank()) {
+                        errorMessage = "Veuillez renseigner le nom du service"
+                        return@Button
                     }
+                    val p = priceText.trim().replace(",", ".").toDoubleOrNull()
+                    if (p == null || p <= 0) {
+                        errorMessage = "Veuillez entrer un prix valide supérieur à 0"
+                        return@Button
+                    }
+                    val d = durationText.trim().toIntOrNull() ?: 20
+                    onSave(name.trim(), p, d)
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Navy900,

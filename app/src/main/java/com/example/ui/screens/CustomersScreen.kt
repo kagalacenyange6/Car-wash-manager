@@ -381,6 +381,7 @@ fun AddCustomerSheet(
     var phone by remember { mutableStateOf("") }
     var address by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -409,22 +410,48 @@ fun AddCustomerSheet(
 
             Spacer(modifier = Modifier.height(14.dp))
 
+            if (errorMessage != null) {
+                Surface(
+                    color = Color(0xFFFEE2E2),
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(1.dp, Color(0xFFEF4444)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = errorMessage!!,
+                        color = Color(0xFFB91C1C),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(10.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+            }
+
             OutlinedTextField(
                 value = name,
-                onValueChange = { name = it },
+                onValueChange = {
+                    name = it
+                    errorMessage = null
+                },
                 label = { Text("Nom complet *", fontWeight = FontWeight.SemiBold) },
                 textStyle = carWashInputTextStyle,
                 colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth().testTag("add_customer_name"),
                 singleLine = true,
+                isError = errorMessage != null && name.isBlank(),
                 shape = RoundedCornerShape(12.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
                 value = phone,
-                onValueChange = { phone = it },
-                label = { Text("Téléphone *", fontWeight = FontWeight.SemiBold) },
+                onValueChange = {
+                    phone = it
+                    errorMessage = null
+                },
+                label = { Text("Téléphone (optionnel)", fontWeight = FontWeight.SemiBold) },
+                placeholder = { Text("ex: 06 12 34 56 78", color = Color(0xFF94A3B8)) },
                 textStyle = carWashInputTextStyle,
                 colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth().testTag("add_customer_phone"),
@@ -460,9 +487,11 @@ fun AddCustomerSheet(
 
             Button(
                 onClick = {
-                    if (name.isNotBlank() && phone.isNotBlank()) {
-                        onSave(name, phone, address, notes)
+                    if (name.trim().isBlank()) {
+                        errorMessage = "Veuillez entrer le nom du client"
+                        return@Button
                     }
+                    onSave(name.trim(), phone.trim().ifBlank { "-" }, address.trim(), notes.trim())
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Navy900,

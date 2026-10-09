@@ -34,6 +34,7 @@ import com.example.ui.components.CarWashBottomNav
 import com.example.ui.components.CarWashTopBar
 import com.example.ui.components.NewOrderWizardSheet
 import com.example.ui.components.PaymentBottomSheet
+import com.example.ui.components.PinLockScreen
 import com.example.ui.components.ProfileBottomSheet
 import com.example.ui.components.ReceiptBottomSheet
 import com.example.ui.components.SupabaseSyncDialog
@@ -64,6 +65,7 @@ fun CarWashApp(
 ) {
     val context = LocalContext.current
     var isSplashVisible by rememberSaveable { mutableStateOf(true) }
+    var isUnlocked by rememberSaveable { mutableStateOf(false) }
 
     val currentTab by viewModel.currentTab.collectAsState()
     val company by viewModel.company.collectAsState()
@@ -94,15 +96,19 @@ fun CarWashApp(
         }
     }
 
-    Crossfade(
-        targetState = isSplashVisible,
-        animationSpec = tween(durationMillis = 400),
-        label = "splash_fade"
-    ) { showSplash ->
-        if (showSplash) {
-            SplashScreen(onSplashFinished = { isSplashVisible = false })
-        } else {
-            Scaffold(
+    if (isSplashVisible) {
+        SplashScreen(onSplashFinished = { isSplashVisible = false })
+    } else if (!isUnlocked) {
+        PinLockScreen(
+            employees = employees,
+            currentEmployee = currentEmployee,
+            onUnlocked = { emp ->
+                viewModel.switchEmployee(emp)
+                isUnlocked = true
+            }
+        )
+    } else {
+        Scaffold(
                 modifier = Modifier.fillMaxSize(),
                 topBar = {
                     CarWashTopBar(
@@ -199,4 +205,4 @@ fun CarWashApp(
             }
         }
     }
-}
+

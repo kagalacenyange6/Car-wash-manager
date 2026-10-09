@@ -58,7 +58,8 @@ enum class PlusScreen(val title: String) {
     NOTIFICATIONS("Notifications"),
     SETTINGS("Paramètres"),
     AUDIT_LOGS("Journal d'activité"),
-    SERVICES_MGMT("Gestion des Services")
+    SERVICES_MGMT("Gestion des Services"),
+    ABOUT("À propos")
 }
 
 class CarWashViewModel(application: Application) : AndroidViewModel(application) {
@@ -479,8 +480,22 @@ class CarWashViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    fun updateEmployee(employee: Employee) {
+        viewModelScope.launch {
+            repository.updateEmployee(employee)
+            if (_currentEmployee.value?.id == employee.id) {
+                _currentEmployee.value = employee
+            }
+            showMessage("Employé ${employee.name} mis à jour !")
+        }
+    }
+
     fun deleteEmployee(employee: Employee) {
         viewModelScope.launch {
+            if (_currentEmployee.value?.id == employee.id) {
+                showMessage("Impossible de supprimer la session active")
+                return@launch
+            }
             repository.deleteEmployee(employee)
             showMessage("Employé supprimé")
         }

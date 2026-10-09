@@ -274,6 +274,7 @@ fun AddVehicleSheet(
     var model by remember { mutableStateOf("") }
     var color by remember { mutableStateOf("Noir") }
     var vehicleType by remember { mutableStateOf("Berline") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -300,30 +301,54 @@ fun AddVehicleSheet(
                 }
             }
 
+            if (errorMessage != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Surface(
+                    color = Color(0xFFFFE4E6),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = errorMessage ?: "",
+                        color = Color(0xFFE11D48),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
 
             // Choose customer dropdown/chips
-            Text("Attribuer au client :", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Navy900)
+            Text("Attribuer au client * :", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Navy900)
             Spacer(modifier = Modifier.height(6.dp))
-            LazyColumn(modifier = Modifier.height(110.dp)) {
-                items(customers, key = { it.id }) { c ->
-                    val isSel = c.id == selectedCustomerId
-                    Surface(
-                        color = if (isSel) Color(0xFFE0F2FE) else Color.White,
-                        shape = RoundedCornerShape(8.dp),
-                        border = BorderStroke(1.dp, if (isSel) BlueAccent else BorderLight),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 2.dp)
-                            .clickable { selectedCustomerId = c.id }
-                    ) {
-                        Text(
-                            text = "${c.name} (${c.phone})",
-                            fontSize = 12.sp,
-                            fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
-                            color = if (isSel) Navy900 else TextPrimary,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                        )
+            if (customers.isEmpty()) {
+                Text("Aucun client existant. Créez d'abord un client.", fontSize = 12.sp, color = Color(0xFFE11D48))
+            } else {
+                LazyColumn(modifier = Modifier.height(110.dp)) {
+                    items(customers, key = { it.id }) { c ->
+                        val isSel = c.id == selectedCustomerId
+                        Surface(
+                            color = if (isSel) Color(0xFFE0F2FE) else Color.White,
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, if (isSel) BlueAccent else BorderLight),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 2.dp)
+                                .clickable { 
+                                    selectedCustomerId = c.id 
+                                    errorMessage = null
+                                }
+                        ) {
+                            Text(
+                                text = "${c.name} (${c.phone})",
+                                fontSize = 12.sp,
+                                fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSel) Navy900 else TextPrimary,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -332,12 +357,16 @@ fun AddVehicleSheet(
 
             OutlinedTextField(
                 value = plate,
-                onValueChange = { plate = it.uppercase() },
+                onValueChange = { 
+                    plate = it.uppercase() 
+                    errorMessage = null
+                },
                 label = { Text("Plaque d'immatriculation *", fontWeight = FontWeight.SemiBold) },
                 textStyle = carWashInputTextStyle,
                 colors = carWashTextFieldColors(),
                 modifier = Modifier.fillMaxWidth().testTag("add_vehicle_plate_input"),
                 singleLine = true,
+                isError = errorMessage != null && plate.isBlank(),
                 shape = RoundedCornerShape(12.dp)
             )
 
@@ -371,9 +400,15 @@ fun AddVehicleSheet(
 
             Button(
                 onClick = {
-                    if (plate.isNotBlank() && selectedCustomerId.isNotBlank()) {
-                        onSave(selectedCustomerId, plate, brand.ifBlank { "Auto" }, model.ifBlank { "Modèle" }, color, vehicleType, "")
+                    if (selectedCustomerId.isBlank()) {
+                        errorMessage = "Veuillez sélectionner un client"
+                        return@Button
                     }
+                    if (plate.trim().isBlank()) {
+                        errorMessage = "Veuillez renseigner la plaque d'immatriculation"
+                        return@Button
+                    }
+                    onSave(selectedCustomerId, plate.trim(), brand.trim().ifBlank { "Auto" }, model.trim().ifBlank { "Modèle" }, color, vehicleType, "")
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Navy900,

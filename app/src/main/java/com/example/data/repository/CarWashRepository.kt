@@ -329,9 +329,11 @@ class CarWashRepository(private val dao: CarWashDao) {
 
     suspend fun adjustStock(productId: String, type: String, qty: Double, reason: String, employeeName: String) {
         val product = dao.getProductById(productId) ?: return
-        val newStock = when (type) {
-            "Entrée" -> product.currentStock + qty
-            "Sortie" -> (product.currentStock - qty).coerceAtLeast(0.0)
+        val isEntry = type.equals("Entrée", ignoreCase = true) || type.equals("ENTREE", ignoreCase = true) || type.equals("IN", ignoreCase = true)
+        val isExit = type.equals("Sortie", ignoreCase = true) || type.equals("SORTIE", ignoreCase = true) || type.equals("OUT", ignoreCase = true)
+        val newStock = when {
+            isEntry -> product.currentStock + qty
+            isExit -> (product.currentStock - qty).coerceAtLeast(0.0)
             else -> qty
         }
         dao.updateProduct(product.copy(currentStock = newStock))
@@ -340,7 +342,7 @@ class CarWashRepository(private val dao: CarWashDao) {
             StockMovement(
                 productId = product.id,
                 productName = product.name,
-                type = type,
+                type = if (isEntry) "Entrée" else if (isExit) "Sortie" else type,
                 quantity = qty,
                 reason = reason,
                 employeeName = employeeName
@@ -399,6 +401,12 @@ class CarWashRepository(private val dao: CarWashDao) {
 
     // Seed Demo Data
     suspend fun seedDemoDataIfEmpty() {
+        // Ensure default admin employee has pin 0000 if exists or on seed
+        val existingAdmin = dao.getEmployeeById("emp-admin")
+        if (existingAdmin != null && existingAdmin.pinCode == "1111") {
+            dao.updateEmployee(existingAdmin.copy(pinCode = "0000"))
+        }
+
         if (dao.getOrdersCount() > 0) return
 
         // 1. Company
@@ -417,14 +425,14 @@ class CarWashRepository(private val dao: CarWashDao) {
         )
         dao.upsertCompany(company)
 
-        // 2. Employees (3 employees with distinct roles)
+        // 2. Employees (Admin with default PIN 0000)
         val empAdmin = Employee(
             id = "emp-admin",
             name = "Patrick Kabeya",
             email = "patrick@flashautowash.com",
             phone = "+243 81 111 2233",
             role = UserRole.ADMIN.name,
-            pinCode = "1111"
+            pinCode = "0000"
         )
         val empManager = Employee(
             id = "emp-manager",

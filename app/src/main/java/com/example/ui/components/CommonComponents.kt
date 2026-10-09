@@ -15,12 +15,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -346,63 +350,63 @@ fun CarWashPrimaryButton(
     enabled: Boolean = true,
     isLoading: Boolean = false
 ) {
-    Surface(
+    Button(
         onClick = onClick,
         enabled = enabled && !isLoading,
         shape = RoundedCornerShape(14.dp),
-        color = if (enabled) Navy900 else Color(0xFFE2E8F0),
-        shadowElevation = if (enabled) 4.dp else 0.dp,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.Transparent,
+            contentColor = Color.White,
+            disabledContainerColor = Color(0xFFE2E8F0),
+            disabledContentColor = Color(0xFF475569)
+        ),
+        elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = if (enabled) 3.dp else 0.dp
+        ),
+        contentPadding = PaddingValues(0.dp),
         modifier = modifier
             .height(52.dp)
             .fillMaxWidth()
+            .background(
+                brush = if (enabled) {
+                    Brush.horizontalGradient(listOf(Color(0xFF0F1E36), Color(0xFF0284C7)))
+                } else {
+                    Brush.horizontalGradient(listOf(Color(0xFFE2E8F0), Color(0xFFCBD5E1)))
+                },
+                shape = RoundedCornerShape(14.dp)
+            )
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    if (enabled) {
-                        Brush.horizontalGradient(
-                            listOf(Color(0xFF0F1E36), Color(0xFF0284C7))
-                        )
-                    } else {
-                        Brush.horizontalGradient(
-                            listOf(Color(0xFFE2E8F0), Color(0xFFCBD5E1))
-                        )
-                    }
-                ),
-            contentAlignment = Alignment.Center
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                if (isLoading) {
-                    androidx.compose.material3.CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = Color.White,
-                        strokeWidth = 2.5.dp
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                } else if (icon != null) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = if (enabled) Color.White else Color(0xFF475569),
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                }
-                Text(
-                    text = text,
-                    style = TextStyle(
-                        fontFamily = FontFamily.SansSerif,
-                        color = if (enabled) Color.White else Color(0xFF475569),
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 15.sp,
-                        letterSpacing = 0.2.sp
-                    )
+            if (isLoading) {
+                androidx.compose.material3.CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = Color.White,
+                    strokeWidth = 2.5.dp
                 )
+                Spacer(modifier = Modifier.width(10.dp))
+            } else if (icon != null) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = if (enabled) Color.White else Color(0xFF475569),
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
             }
+            Text(
+                text = text,
+                style = TextStyle(
+                    fontFamily = FontFamily.SansSerif,
+                    color = if (enabled) Color.White else Color(0xFF475569),
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 15.sp,
+                    letterSpacing = 0.2.sp
+                )
+            )
         }
     }
 }
@@ -418,20 +422,19 @@ fun CarWashSecondaryButton(
     icon: ImageVector? = null,
     enabled: Boolean = true
 ) {
-    Surface(
+    OutlinedButton(
         onClick = onClick,
         enabled = enabled,
         shape = RoundedCornerShape(14.dp),
-        color = Color.White,
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = Color.White,
+            contentColor = Navy900
+        ),
         border = BorderStroke(1.5.dp, Navy900),
-        shadowElevation = 1.dp,
-        modifier = modifier
-            .height(52.dp)
+        modifier = modifier.height(52.dp)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
+            modifier = Modifier.padding(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
