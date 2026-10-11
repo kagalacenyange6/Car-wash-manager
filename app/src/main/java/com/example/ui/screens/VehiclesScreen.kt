@@ -20,9 +20,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.LocalCarWash
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -33,6 +35,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -152,6 +155,9 @@ fun VehiclesScreen(
                             customerName = customer?.name ?: "Client inconnu",
                             onLaunchWash = {
                                 viewModel.startNewOrder(customer, veh)
+                            },
+                            onDeleteVehicle = {
+                                viewModel.deleteVehicle(veh)
                             }
                         )
                     }
@@ -180,8 +186,35 @@ fun VehicleCard(
     vehicle: Vehicle,
     customerName: String,
     onLaunchWash: () -> Unit,
+    onDeleteVehicle: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Supprimer le véhicule ?", fontWeight = FontWeight.Bold, color = Navy900) },
+            text = { Text("Confirmez-vous la suppression du véhicule ${vehicle.plate} (${vehicle.brand} ${vehicle.model}) ?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirm = false
+                        onDeleteVehicle()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE11D48))
+                ) {
+                    Text("Supprimer", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showDeleteConfirm = false }) {
+                    Text("Annuler")
+                }
+            }
+        )
+    }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -212,14 +245,28 @@ fun VehicleCard(
                     )
                 }
 
-                Surface(color = Color(0xFFF1F5F9), shape = RoundedCornerShape(6.dp)) {
-                    Text(
-                        text = "${vehicle.washCount} lavages",
-                        fontSize = 11.sp,
-                        color = Navy900,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(color = Color(0xFFF1F5F9), shape = RoundedCornerShape(6.dp)) {
+                        Text(
+                            text = "${vehicle.washCount} lavages",
+                            fontSize = 11.sp,
+                            color = Navy900,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
+                    IconButton(
+                        onClick = { showDeleteConfirm = true },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Supprimer",
+                            tint = Color(0xFFEF4444),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
             }
 

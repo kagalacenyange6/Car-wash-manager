@@ -37,6 +37,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Calendar
+import java.util.Locale
+
+fun formatAmount(amount: Double, currency: String, showDecimals: Boolean = true): String {
+    return if (showDecimals) {
+        String.format(Locale.US, "%.2f %s", amount, currency)
+    } else {
+        String.format(Locale.US, "%.0f %s", amount, currency)
+    }
+}
 
 enum class AppTab(val title: String) {
     ACCUEIL("Accueil"),
@@ -453,6 +462,28 @@ class CarWashViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             repository.deleteExpense(expense)
             showMessage("Dépense supprimée")
+        }
+    }
+
+    fun deleteProduct(product: Product) {
+        viewModelScope.launch {
+            repository.deleteProduct(product)
+            showMessage("Produit supprimé du stock")
+        }
+    }
+
+    fun clearAllDatabases(onDone: () -> Unit = {}) {
+        viewModelScope.launch {
+            val empName = _currentEmployee.value?.name ?: "Admin"
+            repository.clearAllLocalData(empName)
+            val config = syncManager.configManager.getConfig()
+            if (config.isConfigured && isOnline.value) {
+                val (ok, msg) = syncManager.clearRemoteTables(config)
+                showMessage("Bases locale & Supabase vidées ! ($msg)")
+            } else {
+                showMessage("Base locale SQLite vidée !")
+            }
+            onDone()
         }
     }
 

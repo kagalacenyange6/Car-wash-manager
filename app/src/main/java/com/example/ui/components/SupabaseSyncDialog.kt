@@ -77,6 +77,12 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
+import com.example.util.SupabaseSqlExporter
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SupabaseSyncDialog(
@@ -84,6 +90,7 @@ fun SupabaseSyncDialog(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val clipboardManager = LocalClipboardManager.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
 
@@ -114,6 +121,7 @@ fun SupabaseSyncDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
+                .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = 32.dp)
         ) {
@@ -363,22 +371,86 @@ fun SupabaseSyncDialog(
 
             // Test connection result feedback
             if (testStatusMessage != null) {
+                val isSuccess = testStatusMessage?.contains("réussie", ignoreCase = true) == true ||
+                    testStatusMessage?.contains("accessible", ignoreCase = true) == true ||
+                    testStatusMessage?.contains("validée", ignoreCase = true) == true ||
+                    testStatusMessage?.contains("prêtes", ignoreCase = true) == true
+
                 Spacer(modifier = Modifier.height(8.dp))
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = if (testStatusMessage?.contains("réussie", ignoreCase = true) == true ||
-                        testStatusMessage?.contains("accessible", ignoreCase = true) == true
-                    ) Color(0xFFDCFCE7) else Color(0xFFFEE2E2),
+                    shape = RoundedCornerShape(10.dp),
+                    color = if (isSuccess) Color(0xFFDCFCE7) else Color(0xFFFEE2E2),
+                    border = BorderStroke(1.dp, if (isSuccess) Color(0xFF86EFAC) else Color(0xFFFCA5A5)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            text = if (isSuccess) "✓ Résultat du test :" else "✕ Erreur de connexion :",
+                            color = if (isSuccess) Color(0xFF166534) else Color(0xFF991B1B),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = testStatusMessage ?: "",
+                            color = if (isSuccess) Color(0xFF15803D) else Color(0xFFB91C1C),
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Quick SQL Setup Card with Copy Button
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
+                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Base de données SQL Supabase",
+                                fontWeight = FontWeight.Bold,
+                                color = Navy900,
+                                fontSize = 13.sp
+                            )
+                            Text(
+                                text = "Nécessaire avant la 1ère synchronisation",
+                                color = TextSecondary,
+                                fontSize = 11.sp
+                            )
+                        }
+
+                        Button(
+                            onClick = {
+                                val sql = SupabaseSqlExporter.generateCompleteSql()
+                                clipboardManager.setText(AnnotatedString(sql))
+                                viewModel.showMessage("Script SQL copié dans le presse-papiers !")
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Navy900),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Icon(Icons.Default.ContentCopy, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text("Copier SQL", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = testStatusMessage ?: "",
-                        color = if (testStatusMessage?.contains("réussie", ignoreCase = true) == true ||
-                            testStatusMessage?.contains("accessible", ignoreCase = true) == true
-                        ) Color(0xFF166534) else Color(0xFF991B1B),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(10.dp)
+                        text = "Exécutez ce script dans Supabase > SQL Editor pour créer automatiquement toutes les tables (prestations, clients, véhicules, etc.) et désactiver les blocages RLS.",
+                        color = Color(0xFF64748B),
+                        fontSize = 11.sp,
+                        lineHeight = 15.sp
                     )
                 }
             }

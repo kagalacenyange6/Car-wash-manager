@@ -21,9 +21,9 @@ class SupabaseConfigManager(context: Context) {
         private const val KEY_ANON_KEY = "supabase_anon_key"
         private const val KEY_AUTO_SYNC = "supabase_auto_sync"
 
-        // Sample / default project endpoint for demonstration if user hasn't set one yet
-        const val DEFAULT_URL = "https://carwash-demo.supabase.co"
-        const val DEFAULT_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.carwash_pro_anon_key"
+        // Default project endpoint provided for Supabase integration
+        const val DEFAULT_URL = "https://hzeneirrrbjvildraoik.supabase.co"
+        const val DEFAULT_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6ZW5laXJycmJqdmlsZHJhb2lrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5ODY0NjYsImV4cCI6MjEwNjU2MjQ2Nn0.h9k_Rz8U8fDzZL5GDj2TYONEqpuTmIMkpzYa5kq5Yco"
     }
 
     fun getConfig(): SupabaseConfig {

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -100,6 +101,7 @@ fun NewOrderWizardSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
+                .imePadding()
                 .padding(bottom = 32.dp)
         ) {
             // Sheet Header with Steps indicator
@@ -809,28 +811,25 @@ private fun Step3ChooseServices(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Remise :", color = TextSecondary, fontSize = 13.sp)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        listOf(0.0, 1.0, 2.0).forEach { disc ->
-                            val isSel = discount == disc
-                            Surface(
-                                color = if (isSel) BlueAccent else Color.White,
-                                shape = RoundedCornerShape(6.dp),
-                                border = BorderStroke(1.dp, if (isSel) BlueAccent else BorderLight),
-                                modifier = Modifier
-                                    .padding(start = 4.dp)
-                                    .clickable { onDiscountChanged(disc) }
-                            ) {
-                                Text(
-                                    text = if (disc == 0.0) "0" else "-$disc $currency",
-                                    color = if (isSel) Color.White else TextPrimary,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Remise accordée :", color = TextSecondary, fontSize = 13.sp)
+                        Text("Saisissez le montant en $currency", color = Color(0xFF64748B), fontSize = 11.sp)
                     }
+                    var discountInput by remember(discount) { mutableStateOf(if (discount == 0.0) "" else discount.toString()) }
+                    OutlinedTextField(
+                        value = discountInput,
+                        onValueChange = {
+                            discountInput = it
+                            val parsed = it.replace(",", ".").toDoubleOrNull() ?: 0.0
+                            onDiscountChanged(parsed.coerceAtLeast(0.0))
+                        },
+                        placeholder = { Text("0.0", fontSize = 13.sp) },
+                        textStyle = carWashInputTextStyle.copy(fontSize = 13.sp, fontWeight = FontWeight.Bold),
+                        colors = carWashTextFieldColors(),
+                        shape = RoundedCornerShape(8.dp),
+                        singleLine = true,
+                        modifier = Modifier.width(110.dp).height(50.dp)
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))

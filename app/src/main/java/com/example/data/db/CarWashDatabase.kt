@@ -36,7 +36,7 @@ import com.example.data.model.WashService
         AppNotification::class,
         AuditLog::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class CarWashDatabase : RoomDatabase() {

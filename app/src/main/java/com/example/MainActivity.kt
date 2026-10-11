@@ -11,6 +11,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -42,7 +43,6 @@ import com.example.ui.screens.CustomersScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.OrdersScreen
 import com.example.ui.screens.PlusScreenView
-import com.example.ui.screens.SplashScreen
 import com.example.ui.screens.VehiclesScreen
 import com.example.ui.theme.MyApplicationTheme
 import kotlinx.coroutines.flow.collectLatest
@@ -64,7 +64,6 @@ fun CarWashApp(
     viewModel: CarWashViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    var isSplashVisible by rememberSaveable { mutableStateOf(true) }
     var isUnlocked by rememberSaveable { mutableStateOf(false) }
 
     val currentTab by viewModel.currentTab.collectAsState()
@@ -96,9 +95,7 @@ fun CarWashApp(
         }
     }
 
-    if (isSplashVisible) {
-        SplashScreen(onSplashFinished = { isSplashVisible = false })
-    } else if (!isUnlocked) {
+    if (!isUnlocked) {
         PinLockScreen(
             employees = employees,
             currentEmployee = currentEmployee,
@@ -111,27 +108,30 @@ fun CarWashApp(
         Scaffold(
                 modifier = Modifier.fillMaxSize(),
                 topBar = {
-                    CarWashTopBar(
-                        company = company,
-                        currentEmployee = currentEmployee,
-                        unreadCount = unreadCount,
-                        onNotificationsClick = {
-                            viewModel.selectTab(AppTab.PLUS)
-                            viewModel.openPlusScreen(PlusScreen.NOTIFICATIONS)
-                        },
-                        onEmployeeClick = { showProfileSwitcher = true },
-                        isOnline = isOnline,
-                        syncState = syncState,
-                        onSyncClick = { viewModel.openSupabaseDialog() }
-                    )
+                    Column {
+                        CarWashTopBar(
+                            company = company,
+                            currentEmployee = currentEmployee,
+                            unreadCount = unreadCount,
+                            onNotificationsClick = {
+                                viewModel.selectTab(AppTab.PLUS)
+                                viewModel.openPlusScreen(PlusScreen.NOTIFICATIONS)
+                            },
+                            onEmployeeClick = { showProfileSwitcher = true },
+                            isOnline = isOnline,
+                            syncState = syncState,
+                            onSyncClick = { viewModel.openSupabaseDialog() }
+                        )
+                        // Top Notification Snackbar Host as requested
+                        SnackbarHost(hostState = snackbarHostState)
+                    }
                 },
                 bottomBar = {
                     CarWashBottomNav(
                         currentTab = currentTab,
                         onTabSelected = { viewModel.selectTab(it) }
                     )
-                },
-                snackbarHost = { SnackbarHost(snackbarHostState) }
+                }
             ) { innerPadding ->
                 Box(
                     modifier = Modifier
@@ -163,36 +163,47 @@ fun CarWashApp(
             }
 
             // Modal Sheet 2: Payment Sheet (Espèces, Mobile Money, Carte, Crédit)
-            if (isPaymentOpen && targetPaymentOrder != null) {
-                PaymentBottomSheet(
-                    order = targetPaymentOrder!!,
-                    company = company,
-                    onDismiss = { viewModel.closePaymentDialog() },
-                    onConfirmPayment = { amt, method, ref ->
-                        viewModel.executePayment(targetPaymentOrder!!, amt, method, ref)
-                    }
-                )
+            if (isPaymentOpen) {
+                targetPaymentOrder?.let { order ->
+                    PaymentBottomSheet(
+                        order = order,
+                        company = company,
+                        onDismiss = { viewModel.closePaymentDialog() },
+                        onConfirmPayment = { amt, method, ref ->
+                            viewModel.executePayment(order, amt, method, ref)
+                        }
+                    )
+                }
             }
 
             // Modal Sheet 3: POS Thermal Receipt (80mm / 58mm preview & print)
-            if (isReceiptOpen && targetReceiptOrder != null) {
-                ReceiptBottomSheet(
-                    order = targetReceiptOrder!!,
-                    items = targetReceiptItems,
-                    payments = payments,
-                    company = company,
-                    onDismiss = { viewModel.closeReceiptDialog() },
-                    onPrint = { viewModel.printReceipt(context, targetReceiptOrder!!) }
-                )
+            if (isReceiptOpen) {
+                targetReceiptOrder?.let { order ->
+                    ReceiptBottomSheet(
+                        order = order,
+                        items = targetReceiptItems,
+                        payments = payments,
+                        company = company,
+                        onDismiss = { viewModel.closeReceiptDialog() },
+                        onPrint = { viewModel.printReceipt(context, order) }
+                    )
+                }
             }
 
-            // Modal Sheet 4: Profile / Role Switcher
+            // Modal Sheet 4: Profile / User Dialog with details, connection & logout
             if (showProfileSwitcher) {
                 ProfileBottomSheet(
                     employees = employees,
                     currentEmployee = currentEmployee,
                     onSelectEmployee = { viewModel.switchEmployee(it) },
-                    onDismiss = { showProfileSwitcher = false }
+                    onDismiss = { showProfileSwitcher = false },
+                    isOnline = isOnline,
+                    syncState = syncState,
+                    onSyncClick = { viewModel.openSupabaseDialog() },
+                    onLogout = {
+                        isUnlocked = false
+                        showProfileSwitcher = false
+                    }
                 )
             }
 

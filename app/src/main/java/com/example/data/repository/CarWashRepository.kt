@@ -377,6 +377,26 @@ class CarWashRepository(private val dao: CarWashDao) {
         dao.deleteEmployee(employee)
     }
 
+    suspend fun deleteProduct(product: Product) {
+        dao.deleteProduct(product)
+        logAudit("Admin", "ADMIN", "Suppression produit", "Produit supprimé : ${product.name}")
+    }
+
+    suspend fun clearAllLocalData(employeeName: String) {
+        dao.clearWashOrderItems()
+        dao.clearPayments()
+        dao.clearWashOrders()
+        dao.clearExpenses()
+        dao.clearStockMovements()
+        dao.clearProducts()
+        dao.clearVehicles()
+        dao.clearCustomers()
+        dao.clearLoyaltyAccounts()
+        dao.clearNotifications()
+        dao.clearAuditLogs()
+        logAudit(employeeName, "ADMIN", "Réinitialisation des bases", "Toutes les tables locales ont été vidées")
+    }
+
     // Notifications
     suspend fun markNotificationRead(id: String) {
         dao.markNotificationRead(id)
@@ -401,10 +421,19 @@ class CarWashRepository(private val dao: CarWashDao) {
 
     // Seed Demo Data
     suspend fun seedDemoDataIfEmpty() {
-        // Ensure default admin employee has pin 0000 if exists or on seed
+        // Ensure default admin employee has name Patrick KARUBANDIKA and pin 0000
         val existingAdmin = dao.getEmployeeById("emp-admin")
-        if (existingAdmin != null && existingAdmin.pinCode == "1111") {
-            dao.updateEmployee(existingAdmin.copy(pinCode = "0000"))
+        if (existingAdmin != null) {
+            var updated = existingAdmin
+            if (updated.pinCode == "1111") {
+                updated = updated.copy(pinCode = "0000")
+            }
+            if (updated.name != "Patrick KARUBANDIKA") {
+                updated = updated.copy(name = "Patrick KARUBANDIKA")
+            }
+            if (updated != existingAdmin) {
+                dao.updateEmployee(updated)
+            }
         }
 
         if (dao.getOrdersCount() > 0) return
@@ -428,7 +457,7 @@ class CarWashRepository(private val dao: CarWashDao) {
         // 2. Employees (Admin with default PIN 0000)
         val empAdmin = Employee(
             id = "emp-admin",
-            name = "Patrick Kabeya",
+            name = "Patrick KARUBANDIKA",
             email = "patrick@flashautowash.com",
             phone = "+243 81 111 2233",
             role = UserRole.ADMIN.name,

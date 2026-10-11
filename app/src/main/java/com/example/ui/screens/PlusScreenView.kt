@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -46,9 +47,11 @@ import androidx.compose.material.icons.filled.LocalCarWash
 import androidx.compose.material.icons.filled.MoneyOff
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -61,6 +64,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -71,9 +76,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.border
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -105,6 +112,7 @@ import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.util.SupabaseSqlExporter
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -157,12 +165,13 @@ private fun PlusMenuGrid(
         MenuItemData(PlusScreen.EXPENSES, "Dépenses", "Gestion des charges", Icons.Default.MoneyOff, Color(0xFFFFE4E6), Color(0xFFE11D48)),
         MenuItemData(PlusScreen.STOCK, "Gestion du Stock", "Produits & alertes", Icons.Default.Inventory, Color(0xFFE0F2FE), Color(0xFF0284C7)),
         MenuItemData(PlusScreen.SERVICES_MGMT, "Services & Tarifs", "Configuration lavages", Icons.Default.LocalCarWash, Color(0xFFF1F5F9), Navy900),
-        MenuItemData(PlusScreen.EMPLOYEES, "Employés & Rôles", "Gestion de l'équipe", Icons.Default.Badge, Color(0xFFF3E8FF), Color(0xFF9333EA)),
+        MenuItemData(PlusScreen.EMPLOYEES, "Employés & Laveurs", "Réservé Admin", Icons.Default.Badge, Color(0xFFF3E8FF), Color(0xFF9333EA)),
         MenuItemData(PlusScreen.REPORTS, "Rapports & Chiffres", "Statistiques & Bilan", Icons.Default.Assessment, Color(0xFFDCFCE7), Color(0xFF059669)),
         MenuItemData(PlusScreen.LOYALTY, "Clients Fidèles", "Points & Récompenses", Icons.Default.CardGiftcard, Color(0xFFFEF3C7), Color(0xFFB45309)),
         MenuItemData(PlusScreen.NOTIFICATIONS, "Notifications", "$unreadNotifs non lue(s)", Icons.Default.Notifications, Color(0xFFFFE4E6), Color(0xFFDC2626)),
         MenuItemData(PlusScreen.SETTINGS, "Paramètres & Supabase", "POS, Ticket, DDL SQL", Icons.Default.Settings, Color(0xFFF1F5F9), Navy900),
-        MenuItemData(PlusScreen.AUDIT_LOGS, "Journal d'activité", "Audit des actions", Icons.Default.History, Color(0xFFF1F5F9), Color(0xFF475569))
+        MenuItemData(PlusScreen.AUDIT_LOGS, "Journal d'activité", "Audit des actions", Icons.Default.History, Color(0xFFF1F5F9), Color(0xFF475569)),
+        MenuItemData(PlusScreen.ABOUT, "À propos", "Réalisée par JuaTech", Icons.Default.Info, Color(0xFFE0F2FE), Color(0xFF0284C7))
     )
 
     LazyColumn(
@@ -259,10 +268,17 @@ private fun PlusMenuGrid(
         }
 
         items(menuItems) { item ->
+            val currentEmp by viewModel.currentEmployee.collectAsState()
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { viewModel.openPlusScreen(item.screen) }
+                    .clickable {
+                        if (item.screen == PlusScreen.EMPLOYEES && currentEmp?.role != "ADMIN") {
+                            viewModel.showMessage("Accès refusé : Seul l'administrateur peut accéder à la gestion des employés et laveurs.")
+                        } else {
+                            viewModel.openPlusScreen(item.screen)
+                        }
+                    }
                     .testTag("menu_item_${item.screen.name.lowercase()}"),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 shape = RoundedCornerShape(14.dp),
@@ -1004,11 +1020,39 @@ fun AddProductSheet(
 // -------------------------------------------------------------
 // SUB-SCREEN 5 : EMPLOYÉS & RÔLES
 // -------------------------------------------------------------
+private fun getEmployeeAvatarGradient(name: String, role: String): Brush {
+    if (role.equals("ADMIN", ignoreCase = true)) {
+        return Brush.linearGradient(listOf(Color(0xFF0F172A), Color(0xFF0284C7)))
+    }
+    val palettes = listOf(
+        listOf(Color(0xFF4F46E5), Color(0xFF3730A3)), // Indigo
+        listOf(Color(0xFF059669), Color(0xFF065F46)), // Emerald
+        listOf(Color(0xFFD97706), Color(0xFFB45309)), // Amber
+        listOf(Color(0xFF7C3AED), Color(0xFF5B21B6)), // Purple
+        listOf(Color(0xFF0891B2), Color(0xFF155E75)), // Cyan
+        listOf(Color(0xFFE11D48), Color(0xFF9F1239))  // Rose
+    )
+    val hash = kotlin.math.abs(name.trim().hashCode())
+    return Brush.linearGradient(palettes[hash % palettes.size])
+}
+
+private fun getEmployeeInitials(name: String): String {
+    val parts = name.trim().split("\\s+".toRegex()).filter { it.isNotBlank() }
+    return when {
+        parts.isEmpty() -> "EM"
+        parts.size == 1 -> parts[0].take(2).uppercase()
+        else -> "${parts[0].first().uppercaseChar()}${parts[1].first().uppercaseChar()}"
+    }
+}
+
 @Composable
 fun EmployeesSubScreen(viewModel: CarWashViewModel, modifier: Modifier = Modifier) {
     val employees by viewModel.employees.collectAsState()
     val orders by viewModel.orders.collectAsState()
+    val currentEmp by viewModel.currentEmployee.collectAsState()
     var showAddEmployee by remember { mutableStateOf(false) }
+    var employeeToEdit by remember { mutableStateOf<Employee?>(null) }
+    var employeeToDelete by remember { mutableStateOf<Employee?>(null) }
 
     SubScreenScaffold(
         title = "Employés & Laveurs",
@@ -1042,6 +1086,7 @@ fun EmployeesSubScreen(viewModel: CarWashViewModel, modifier: Modifier = Modifie
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(employees, key = { it.id }) { emp ->
                 val washesDone = orders.count { it.employeeName.contains(emp.name.split(" ").first()) }
+                val isCurrentSession = currentEmp?.id == emp.id
 
                 Card(
                     colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -1055,22 +1100,140 @@ fun EmployeesSubScreen(viewModel: CarWashViewModel, modifier: Modifier = Modifie
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(emp.name, fontWeight = FontWeight.Bold, color = Navy900, fontSize = 14.sp)
-                            Text("${emp.role} • ${emp.phone}", fontSize = 12.sp, color = TextSecondary)
-                            Text("Lavages effectués : $washesDone", fontSize = 11.sp, color = BlueAccent, fontWeight = FontWeight.SemiBold)
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Enhanced Employee Avatar
+                            Box(
+                                modifier = Modifier
+                                    .size(46.dp)
+                                    .clip(CircleShape)
+                                    .background(getEmployeeAvatarGradient(emp.name, emp.role))
+                                    .border(1.5.dp, Color.White, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = getEmployeeInitials(emp.name),
+                                    fontWeight = FontWeight.Black,
+                                    color = Color.White,
+                                    fontSize = 15.sp,
+                                    letterSpacing = 0.5.sp
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(emp.name, fontWeight = FontWeight.Bold, color = Navy900, fontSize = 14.sp)
+                                    if (isCurrentSession) {
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Surface(
+                                            color = Color(0xFFDCFCE7),
+                                            shape = RoundedCornerShape(4.dp)
+                                        ) {
+                                            Text(
+                                                "Moi",
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFF16A34A),
+                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                                Text("${emp.role} • ${emp.phone.ifBlank { "Aucun tél" }}", fontSize = 12.sp, color = TextSecondary)
+                                Text("Lavages effectués : $washesDone", fontSize = 11.sp, color = BlueAccent, fontWeight = FontWeight.SemiBold)
+                            }
                         }
 
-                        Surface(
-                            color = Color(0xFFF1F5F9),
-                            shape = RoundedCornerShape(6.dp)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Text("PIN: ${emp.pinCode}", fontSize = 11.sp, color = TextSecondary, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                            Surface(
+                                color = Color(0xFFF1F5F9),
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Text(
+                                    "PIN: ${emp.pinCode}",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = TextSecondary,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                                )
+                            }
+
+                            // Edit button
+                            IconButton(
+                                onClick = { employeeToEdit = emp },
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Edit,
+                                    contentDescription = "Modifier l'employé",
+                                    tint = Navy900,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+
+                            // Delete button (disabled or hidden for active session)
+                            if (!isCurrentSession) {
+                                IconButton(
+                                    onClick = { employeeToDelete = emp },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = "Supprimer l'employé",
+                                        tint = Color(0xFFFDA4AF),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
         }
+    }
+
+    // Confirmation dialog for deleting an employee
+    employeeToDelete?.let { emp ->
+        AlertDialog(
+            onDismissRequest = { employeeToDelete = null },
+            title = { Text("Supprimer l'employé ?", fontWeight = FontWeight.Bold, color = Navy900) },
+            text = { Text("Êtes-vous sûr de vouloir supprimer ${emp.name} (${emp.role}) de l'équipe ? Ses accès seront immédiatement révoqués.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteEmployee(emp)
+                        employeeToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = StatusDebt)
+                ) {
+                    Text("Oui, Supprimer", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { employeeToDelete = null }) {
+                    Text("Annuler")
+                }
+            }
+        )
+    }
+
+    // Edit Employee Sheet
+    employeeToEdit?.let { emp ->
+        EditEmployeeSheet(
+            employee = emp,
+            onDismiss = { employeeToEdit = null },
+            onSave = { updatedEmp ->
+                viewModel.updateEmployee(updatedEmp)
+                employeeToEdit = null
+            }
+        )
     }
 
     if (showAddEmployee) {
@@ -1081,6 +1244,145 @@ fun EmployeesSubScreen(viewModel: CarWashViewModel, modifier: Modifier = Modifie
                 showAddEmployee = false
             }
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditEmployeeSheet(
+    employee: Employee,
+    onDismiss: () -> Unit,
+    onSave: (Employee) -> Unit
+) {
+    var name by remember { mutableStateOf(employee.name) }
+    var phone by remember { mutableStateOf(employee.phone) }
+    var role by remember { mutableStateOf(employee.role) }
+    var pin by remember { mutableStateOf(employee.pinCode) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Color.White) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 32.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Modifier l'Employé", fontWeight = FontWeight.Bold, color = Navy900, fontSize = 18.sp)
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Default.Close, contentDescription = "Fermer", tint = TextSecondary)
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (errorMessage != null) {
+                Surface(
+                    color = Color(0xFFFFE4E6),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = errorMessage ?: "",
+                        color = Color(0xFFE11D48),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            OutlinedTextField(
+                value = name,
+                onValueChange = {
+                    name = it
+                    errorMessage = null
+                },
+                label = { Text("Nom complet *", fontWeight = FontWeight.SemiBold) },
+                textStyle = carWashInputTextStyle,
+                colors = carWashTextFieldColors(),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                isError = errorMessage != null && name.isBlank(),
+                shape = RoundedCornerShape(12.dp)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = phone,
+                onValueChange = {
+                    phone = it
+                    errorMessage = null
+                },
+                label = { Text("Téléphone", fontWeight = FontWeight.SemiBold) },
+                textStyle = carWashInputTextStyle,
+                colors = carWashTextFieldColors(),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Rôle :", fontSize = 12.sp, color = TextSecondary)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("EMPLOYEE" to "Employé", "MANAGER" to "Gérant", "ADMIN" to "Admin").forEach { (r, label) ->
+                    val isSel = role == r
+                    Surface(
+                        color = if (isSel) Navy900 else Color(0xFFF1F5F9),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.clickable { role = r }
+                    ) {
+                        Text(label, color = if (isSel) Color.White else TextPrimary, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = pin,
+                onValueChange = {
+                    if (it.length <= 8) pin = it
+                },
+                label = { Text("Code PIN (4 chiffres)", fontWeight = FontWeight.SemiBold) },
+                textStyle = carWashInputTextStyle,
+                colors = carWashTextFieldColors(),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = {
+                    if (name.trim().isBlank()) {
+                        errorMessage = "Veuillez renseigner le nom complet de l'employé"
+                        return@Button
+                    }
+                    val cleanPhone = phone.trim().ifBlank { "-" }
+                    val cleanPin = pin.trim().ifBlank { employee.pinCode }
+                    val updated = employee.copy(
+                        name = name.trim(),
+                        phone = cleanPhone,
+                        role = role,
+                        pinCode = cleanPin
+                    )
+                    onSave(updated)
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Navy900,
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(12.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
+                modifier = Modifier.fillMaxWidth().height(50.dp)
+            ) {
+                Text("Enregistrer les modifications", fontWeight = FontWeight.ExtraBold, color = Color.White, fontSize = 15.sp)
+            }
+        }
     }
 }
 
@@ -1212,87 +1514,456 @@ fun AddEmployeeSheet(
 fun ReportsSubScreen(viewModel: CarWashViewModel, modifier: Modifier = Modifier) {
     val orders by viewModel.orders.collectAsState()
     val expenses by viewModel.expenses.collectAsState()
+    val payments by viewModel.payments.collectAsState()
+    val employees by viewModel.employees.collectAsState()
     val company by viewModel.company.collectAsState()
     val currency = company?.currencySymbol ?: "$"
+    val showDecimals = company?.showDecimals ?: true
 
-    val totalRecettes = orders.sumOf { it.paidAmount }
-    val totalDepenses = expenses.sumOf { it.amount }
+    fun formatAmount(amount: Double, curr: String, decimals: Boolean): String {
+        val formatted = if (decimals) {
+            String.format(Locale.US, "%,.2f", amount)
+        } else {
+            String.format(Locale.US, "%,.0f", amount)
+        }
+        return "$formatted $curr"
+    }
+
+    var selectedPeriod by remember { mutableStateOf("MOIS") } // JOUR, MOIS, ANNEE, TOUT
+    var searchQuery by remember { mutableStateOf("") }
+
+    // Calendar bounds for filters
+    val now = remember { Calendar.getInstance() }
+    val todayStart = remember {
+        Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+    }
+    val monthStart = remember {
+        Calendar.getInstance().apply {
+            set(Calendar.DAY_OF_MONTH, 1)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+    }
+    val yearStart = remember {
+        Calendar.getInstance().apply {
+            set(Calendar.DAY_OF_YEAR, 1)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+    }
+
+    // Filtered lists based on period & search query
+    val filteredOrders = remember(orders, selectedPeriod, searchQuery) {
+        orders.filter { ord ->
+            val matchesPeriod = when (selectedPeriod) {
+                "JOUR" -> ord.createdAt >= todayStart
+                "MOIS" -> ord.createdAt >= monthStart
+                "ANNEE" -> ord.createdAt >= yearStart
+                else -> true
+            }
+            val matchesSearch = searchQuery.isBlank() ||
+                ord.customerName.contains(searchQuery, ignoreCase = true) ||
+                ord.vehiclePlate.contains(searchQuery, ignoreCase = true) ||
+                ord.employeeName.contains(searchQuery, ignoreCase = true) ||
+                ord.orderNumber.contains(searchQuery, ignoreCase = true)
+
+            matchesPeriod && matchesSearch
+        }
+    }
+
+    val filteredExpenses = remember(expenses, selectedPeriod, searchQuery) {
+        expenses.filter { exp ->
+            val matchesPeriod = when (selectedPeriod) {
+                "JOUR" -> exp.date >= todayStart
+                "MOIS" -> exp.date >= monthStart
+                "ANNEE" -> exp.date >= yearStart
+                else -> true
+            }
+            val matchesSearch = searchQuery.isBlank() ||
+                exp.category.contains(searchQuery, ignoreCase = true) ||
+                exp.description.contains(searchQuery, ignoreCase = true) ||
+                exp.employeeName.contains(searchQuery, ignoreCase = true)
+
+            matchesPeriod && matchesSearch
+        }
+    }
+
+    val totalRecettes = filteredOrders.sumOf { it.paidAmount }
+    val totalDettes = filteredOrders.sumOf { (it.finalAmount - it.paidAmount).coerceAtLeast(0.0) }
+    val totalDepenses = filteredExpenses.sumOf { it.amount }
     val beneficeNet = totalRecettes - totalDepenses
-    val totalVehicles = orders.count { it.status == "COMPLETED" }
-    val totalDebts = orders.sumOf { (it.finalAmount - it.paidAmount).coerceAtLeast(0.0) }
+    val totalVehicles = filteredOrders.count { it.status == "COMPLETED" }
+    val panierMoyen = if (filteredOrders.isNotEmpty()) totalRecettes / filteredOrders.size else 0.0
 
     SubScreenScaffold(
         title = "Rapports & Statistiques",
         onBack = { viewModel.closePlusScreen() },
         modifier = modifier
     ) {
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Period Filter Chips (Jour, Mois, Année, Tout)
             item {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    shape = RoundedCornerShape(14.dp),
-                    border = BorderStroke(1.dp, BorderLight)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Bilan Financier Global", fontWeight = FontWeight.Bold, color = Navy900, fontSize = 16.sp)
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Total Recettes (CA encaissé) :", color = TextSecondary, fontSize = 13.sp)
-                            Text(String.format(Locale.US, "%.2f %s", totalRecettes, currency), fontWeight = FontWeight.Bold, color = StatusCompleted, fontSize = 14.sp)
+                    listOf(
+                        "JOUR" to "Aujourd'hui",
+                        "MOIS" to "Ce Mois",
+                        "ANNEE" to "Cette Année",
+                        "TOUT" to "Tout"
+                    ).forEach { (code, label) ->
+                        val isSelected = selectedPeriod == code
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = if (isSelected) Navy900 else Color.White,
+                            border = BorderStroke(1.dp, if (isSelected) Navy900 else BorderLight),
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { selectedPeriod = code }
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            ) {
+                                Text(
+                                    text = label,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) Color.White else Navy900
+                                )
+                            }
                         }
-                        Spacer(modifier = Modifier.height(6.dp))
+                    }
+                }
+            }
 
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Total Dépenses :", color = TextSecondary, fontSize = 13.sp)
-                            Text(String.format(Locale.US, "-%.2f %s", totalDepenses, currency), fontWeight = FontWeight.Bold, color = StatusDebt, fontSize = 14.sp)
+            // Search Bar for Reports
+            item {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Filtrer par client, plaque, employé...", fontSize = 12.sp, color = Color(0xFF94A3B8)) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Navy900, modifier = Modifier.size(18.dp)) },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Close, contentDescription = "Effacer", modifier = Modifier.size(16.dp))
+                            }
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(BorderLight))
-                        Spacer(modifier = Modifier.height(8.dp))
+                    },
+                    singleLine = true,
+                    textStyle = carWashInputTextStyle.copy(fontSize = 12.sp),
+                    colors = carWashTextFieldColors(),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Bénéfice Net :", fontWeight = FontWeight.Bold, color = Navy900, fontSize = 15.sp)
+            // Metric Cards Grid (2x2)
+            item {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    // Card 1 : Recettes
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4)),
+                        border = BorderStroke(1.dp, Color(0xFFBBF7D0)),
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text("Recettes Encaissement", fontSize = 11.sp, color = Color(0xFF166534), fontWeight = FontWeight.SemiBold)
+                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = String.format(Locale.US, "%.2f %s", beneficeNet, currency),
-                                fontWeight = FontWeight.Bold,
-                                color = if (beneficeNet >= 0) Color(0xFF16A34A) else StatusDebt,
-                                fontSize = 18.sp
+                                text = formatAmount(totalRecettes, currency, showDecimals),
+                                fontWeight = FontWeight.Black,
+                                fontSize = 17.sp,
+                                color = Color(0xFF15803D)
                             )
+                            Text("${filteredOrders.size} prestation(s)", fontSize = 10.sp, color = Color(0xFF166534))
+                        }
+                    }
+
+                    // Card 2 : Dépenses
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF1F2)),
+                        border = BorderStroke(1.dp, Color(0xFFFECDD3)),
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text("Charges & Dépenses", fontSize = 11.sp, color = Color(0xFF9F1239), fontWeight = FontWeight.SemiBold)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "-${formatAmount(totalDepenses, currency, showDecimals)}",
+                                fontWeight = FontWeight.Black,
+                                fontSize = 17.sp,
+                                color = Color(0xFFBE123C)
+                            )
+                            Text("${filteredExpenses.size} dépense(s)", fontSize = 10.sp, color = Color(0xFF9F1239))
                         }
                     }
                 }
             }
 
             item {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    shape = RoundedCornerShape(14.dp),
-                    border = BorderStroke(1.dp, BorderLight)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Indicateurs Opérationnels", fontWeight = FontWeight.Bold, color = Navy900, fontSize = 16.sp)
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Véhicules lavés terminés :", color = TextSecondary)
-                            Text("$totalVehicles véhicules", fontWeight = FontWeight.Bold, color = Navy900)
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    // Card 3 : Bénéfice Net
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (beneficeNet >= 0) Color(0xFFEFF6FF) else Color(0xFFFFFBEB)
+                        ),
+                        border = BorderStroke(1.dp, if (beneficeNet >= 0) Color(0xFFBFDBFE) else Color(0xFFFDE68A)),
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text("Bénéfice Net", fontSize = 11.sp, color = Navy900, fontWeight = FontWeight.SemiBold)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = formatAmount(beneficeNet, currency, showDecimals),
+                                fontWeight = FontWeight.Black,
+                                fontSize = 17.sp,
+                                color = if (beneficeNet >= 0) Color(0xFF1D4ED8) else Color(0xFFB45309)
+                            )
+                            Text(if (beneficeNet >= 0) "Marge positive" else "Déficit temporaire", fontSize = 10.sp, color = TextSecondary)
                         }
-                        Spacer(modifier = Modifier.height(6.dp))
+                    }
 
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Dettes clients non recouvrées :", color = TextSecondary)
-                            Text(String.format(Locale.US, "%.2f %s", totalDebts, currency), fontWeight = FontWeight.Bold, color = StatusDebt)
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        val panierMoyen = if (orders.isNotEmpty()) totalRecettes / orders.size else 0.0
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Panier moyen par prestation :", color = TextSecondary)
-                            Text(String.format(Locale.US, "%.2f %s", panierMoyen, currency), fontWeight = FontWeight.Bold, color = BlueAccent)
+                    // Card 4 : Véhicules lavés & Panier Moyen
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = BorderStroke(1.dp, BorderLight),
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text("Véhicules & Panier", fontSize = 11.sp, color = Navy900, fontWeight = FontWeight.SemiBold)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "$totalVehicles terminés",
+                                fontWeight = FontWeight.Black,
+                                fontSize = 16.sp,
+                                color = Navy900
+                            )
+                            Text("Moy: ${formatAmount(panierMoyen, currency, showDecimals)}", fontSize = 10.sp, color = BlueAccent)
                         }
                     }
                 }
+            }
+
+            // Visual Chart Section : Bar chart with Jetpack Compose Canvas
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, BorderLight),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Graphique Comparatif : Recettes vs Dépenses",
+                                fontWeight = FontWeight.Bold,
+                                color = Navy900,
+                                fontSize = 14.sp
+                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color(0xFF16A34A)))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Recettes", fontSize = 10.sp, color = TextSecondary)
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color(0xFFE11D48)))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Dépenses", fontSize = 10.sp, color = TextSecondary)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // Custom animated comparison bar layout
+                        val maxComparisonVal = (totalRecettes.coerceAtLeast(totalDepenses)).coerceAtLeast(100.0)
+                        val recetteBarRatio = (totalRecettes / maxComparisonVal).toFloat().coerceIn(0.05f, 1f)
+                        val depenseBarRatio = (totalDepenses / maxComparisonVal).toFloat().coerceIn(0.05f, 1f)
+
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            // Recettes horizontal gauge bar
+                            Column {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Volume Recettes", fontSize = 11.sp, color = Color(0xFF16A34A), fontWeight = FontWeight.Bold)
+                                    Text(formatAmount(totalRecettes, currency, showDecimals), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF16A34A))
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(18.dp)
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(Color(0xFFF1F5F9))
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth(recetteBarRatio)
+                                            .fillMaxHeight()
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(
+                                                androidx.compose.ui.graphics.Brush.horizontalGradient(
+                                                    listOf(Color(0xFF22C55E), Color(0xFF16A34A))
+                                                )
+                                            )
+                                    )
+                                }
+                            }
+
+                            // Dépenses horizontal gauge bar
+                            Column {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Volume Dépenses", fontSize = 11.sp, color = Color(0xFFE11D48), fontWeight = FontWeight.Bold)
+                                    Text(formatAmount(totalDepenses, currency, showDecimals), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFE11D48))
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(18.dp)
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(Color(0xFFF1F5F9))
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth(depenseBarRatio)
+                                            .fillMaxHeight()
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(
+                                                androidx.compose.ui.graphics.Brush.horizontalGradient(
+                                                    listOf(Color(0xFFF43F5E), Color(0xFFE11D48))
+                                                )
+                                            )
+                                    )
+                                }
+                            }
+                        }
+
+                        if (totalDettes > 0) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color(0xFFFFFBEB),
+                                border = BorderStroke(1.dp, Color(0xFFFDE68A)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Dettes clients non recouvrées sur la période :", fontSize = 11.sp, color = Color(0xFF92400E))
+                                    Text(formatAmount(totalDettes, currency, showDecimals), fontWeight = FontWeight.Bold, color = Color(0xFFB45309), fontSize = 12.sp)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Top Washers Leaderboard Section
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, BorderLight),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Classement de l'équipe (Laveurs & Opérateurs)",
+                            fontWeight = FontWeight.Bold,
+                            color = Navy900,
+                            fontSize = 14.sp
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        if (employees.isEmpty()) {
+                            Text("Aucun employé configuré.", fontSize = 12.sp, color = TextSecondary)
+                        } else {
+                            employees.forEachIndexed { idx, emp ->
+                                val washesCount = filteredOrders.count { it.employeeName.contains(emp.name.split(" ").first()) }
+                                val empRevenue = filteredOrders
+                                    .filter { it.employeeName.contains(emp.name.split(" ").first()) }
+                                    .sumOf { it.paidAmount }
+
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 6.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = when (idx) {
+                                                0 -> Color(0xFFFEF3C7)
+                                                1 -> Color(0xFFF1F5F9)
+                                                else -> Color(0xFFEDE9FE)
+                                            },
+                                            modifier = Modifier.size(28.dp)
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Text(
+                                                    text = "${idx + 1}",
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 11.sp,
+                                                    color = Navy900
+                                                )
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Column {
+                                            Text(emp.name, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Navy900)
+                                            Text("${emp.role} • $washesCount lavage(s)", fontSize = 10.sp, color = TextSecondary)
+                                        }
+                                    }
+
+                                    Text(
+                                        text = formatAmount(empRevenue, currency, showDecimals),
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp,
+                                        color = BlueAccent
+                                    )
+                                }
+                                if (idx < employees.size - 1) {
+                                    Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF1F5F9)))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(40.dp))
             }
         }
     }
@@ -1443,17 +2114,60 @@ fun NotificationsSubScreen(viewModel: CarWashViewModel, modifier: Modifier = Mod
 @Composable
 fun SettingsSubScreen(viewModel: CarWashViewModel, modifier: Modifier = Modifier) {
     val company by viewModel.company.collectAsState()
+    val currentEmp by viewModel.currentEmployee.collectAsState()
     val context = LocalContext.current
 
     var name by remember(company) { mutableStateOf(company?.name ?: "Car Wash Pro") }
     var phone by remember(company) { mutableStateOf(company?.phone ?: "") }
     var address by remember(company) { mutableStateOf(company?.address ?: "") }
     var currency by remember(company) { mutableStateOf(company?.currencySymbol ?: "$") }
+    var showDecimals by remember(company) { mutableStateOf(company?.showDecimals ?: true) }
     var paperWidth by remember(company) { mutableStateOf(company?.receiptPaperWidth ?: "80mm") }
     var headerNote by remember(company) { mutableStateOf(company?.receiptHeaderNote ?: "") }
     var footerNote by remember(company) { mutableStateOf(company?.receiptFooterNote ?: "") }
 
     var showSqlModal by remember { mutableStateOf(false) }
+    var showClearDbDialog by remember { mutableStateOf(false) }
+
+    if (showClearDbDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearDbDialog = false },
+            title = {
+                Text(
+                    text = "⚠️ Vider la base locale et en ligne ?",
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFE11D48),
+                    fontSize = 17.sp
+                )
+            },
+            text = {
+                Text(
+                    text = "Attention : Cette opération administrative irréversible va vider simultanément toutes les prestations, clients, véhicules, paiements, dépenses et produits de la base SQLite locale ET de la base distante Supabase.\n\nÊtes-vous certain de vouloir tout réinitialiser ?",
+                    color = Navy900,
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showClearDbDialog = false
+                        viewModel.clearAllDatabases {
+                            viewModel.showMessage("Bases locale et distante vidées avec succès !")
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE11D48))
+                ) {
+                    Text("Oui, tout effacer", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showClearDbDialog = false }) {
+                    Text("Annuler")
+                }
+            }
+        )
+    }
 
     SubScreenScaffold(
         title = "Paramètres de l'entreprise",
@@ -1515,6 +2229,83 @@ fun SettingsSubScreen(viewModel: CarWashViewModel, modifier: Modifier = Modifier
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp)
                 )
+            }
+
+            // Choix exclusif : Format des nombres (Entier ou Décimal, pas les deux à la fois)
+            item {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Format d'affichage des montants :", fontWeight = FontWeight.Bold, color = Navy900, fontSize = 14.sp)
+                Text("Choisissez l'affichage en entier ou en décimal (exclusif)", color = TextSecondary, fontSize = 11.sp)
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = BorderStroke(1.dp, BorderLight),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        // Option 1 : Entier
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showDecimals = false }
+                                .padding(vertical = 6.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = !showDecimals,
+                                onClick = { showDecimals = false },
+                                colors = RadioButtonDefaults.colors(selectedColor = Navy900)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = "Nombres entiers (sans décimales)",
+                                    fontWeight = if (!showDecimals) FontWeight.Bold else FontWeight.Medium,
+                                    color = Navy900,
+                                    fontSize = 13.sp
+                                )
+                                Text(
+                                    text = "Exemple : 15 000 $currency (recommandé pour FC, XOF, XAF, YEN)",
+                                    color = TextSecondary,
+                                    fontSize = 11.sp
+                                )
+                            }
+                        }
+
+                        Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(BorderLight))
+
+                        // Option 2 : Décimal
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showDecimals = true }
+                                .padding(vertical = 6.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = showDecimals,
+                                onClick = { showDecimals = true },
+                                colors = RadioButtonDefaults.colors(selectedColor = Navy900)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = "Nombres décimaux (avec 2 décimales)",
+                                    fontWeight = if (showDecimals) FontWeight.Bold else FontWeight.Medium,
+                                    color = Navy900,
+                                    fontSize = 13.sp
+                                )
+                                Text(
+                                    text = "Exemple : 15 000.00 $currency (recommandé pour USD, EUR)",
+                                    color = TextSecondary,
+                                    fontSize = 11.sp
+                                )
+                            }
+                        }
+                    }
+                }
             }
 
             item {
@@ -1580,11 +2371,13 @@ fun SettingsSubScreen(viewModel: CarWashViewModel, modifier: Modifier = Modifier
                                 phone = phone,
                                 address = address,
                                 currencySymbol = currency,
+                                showDecimals = showDecimals,
                                 receiptPaperWidth = paperWidth,
                                 receiptHeaderNote = headerNote,
                                 receiptFooterNote = footerNote
                             )
                         )
+                        viewModel.showMessage("Paramètres de l'entreprise enregistrés !")
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Navy900,
@@ -1619,7 +2412,7 @@ fun SettingsSubScreen(viewModel: CarWashViewModel, modifier: Modifier = Modifier
                         }
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Générez et copiez le script SQL DDL complet pour déployer la base PostgreSQL sur Supabase avec Row Level Security (RLS) et rôles.",
+                            text = "Générez et copiez le script SQL DDL complet pour déployer la base PostgreSQL sur Supabase avec Row Level Security (RLS) et permissions.",
                             fontSize = 12.sp,
                             color = TextSecondary
                         )
@@ -1648,18 +2441,75 @@ fun SettingsSubScreen(viewModel: CarWashViewModel, modifier: Modifier = Modifier
                     }
                 }
             }
+
+            // Danger Zone : Vider la base de données locale ET en ligne (Admin uniquement)
+            if (currentEmp?.role == "ADMIN") {
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF1F2)),
+                        shape = RoundedCornerShape(14.dp),
+                        border = BorderStroke(1.dp, Color(0xFFFECDD3))
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Delete, contentDescription = null, tint = Color(0xFFE11D48), modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Zone d'Administration : Réinitialisation globale",
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF9F1239),
+                                    fontSize = 14.sp
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = "Seul l'administrateur peut exécuter cette action. Ce bouton vide simultanément la base de données SQLite locale de l'appareil et toutes les tables de la base de données distante Supabase.",
+                                fontSize = 12.sp,
+                                color = Color(0xFF881337),
+                                lineHeight = 16.sp
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Button(
+                                onClick = { showClearDbDialog = true },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFFE11D48),
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.fillMaxWidth().height(46.dp)
+                            ) {
+                                Icon(Icons.Default.Delete, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Vider la base locale et en ligne", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 13.sp)
+                            }
+                        }
+                    }
+                }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(30.dp))
+            }
         }
     }
 
     if (showSqlModal) {
-        SupabaseSqlModal(onDismiss = { showSqlModal = false })
+        SupabaseSqlModal(
+            viewModel = viewModel,
+            onDismiss = { showSqlModal = false }
+        )
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SupabaseSqlModal(onDismiss: () -> Unit) {
+fun SupabaseSqlModal(
+    viewModel: CarWashViewModel,
+    onDismiss: () -> Unit
+) {
     val context = LocalContext.current
+    val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
     val sqlText = remember { SupabaseSqlExporter.generateCompleteSql() }
 
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Color.White) {
@@ -1705,9 +2555,9 @@ fun SupabaseSqlModal(onDismiss: () -> Unit) {
 
             Button(
                 onClick = {
-                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    val clip = ClipData.newPlainText("Supabase SQL", sqlText)
-                    clipboard.setPrimaryClip(clip)
+                    clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(sqlText))
+                    android.widget.Toast.makeText(context, "Script SQL Supabase copié dans le presse-papiers !", android.widget.Toast.LENGTH_SHORT).show()
+                    viewModel.showMessage("Script SQL copié avec succès !")
                     onDismiss()
                 },
                 colors = ButtonDefaults.buttonColors(
@@ -2006,5 +2856,192 @@ fun SubScreenScaffold(
         Spacer(modifier = Modifier.height(12.dp))
 
         content()
+    }
+}
+
+// -------------------------------------------------------------
+// SUB-SCREEN 12 : À PROPOS (JuaTech)
+// -------------------------------------------------------------
+@Composable
+fun AboutSubScreen(viewModel: CarWashViewModel, modifier: Modifier = Modifier) {
+    val company by viewModel.company.collectAsState()
+
+    SubScreenScaffold(
+        title = "À propos de l'application",
+        onBack = { viewModel.closePlusScreen() },
+        modifier = modifier
+    ) {
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Navy900),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFF0284C7),
+                            modifier = Modifier.size(64.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Default.LocalCarWash,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(36.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = company?.name?.ifBlank { "Flash Car Wash Pro" } ?: "Flash Car Wash Pro",
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White,
+                            fontSize = 20.sp
+                        )
+
+                        Text(
+                            text = "Système de Gestion & Caisse POS pour Station de Lavage",
+                            color = Color(0xFF94A3B8),
+                            fontSize = 12.sp,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color.White.copy(alpha = 0.15f)
+                        ) {
+                            Text(
+                                text = "Version 2.5.0 (Édition Pro 2026)",
+                                color = Color(0xFF38BDF8),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Realisation & Développeur : JuaTech
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.5.dp, Color(0xFF0284C7)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(18.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(
+                                shape = CircleShape,
+                                color = Color(0xFFE0F2FE),
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.Default.Info,
+                                        contentDescription = null,
+                                        tint = Color(0xFF0284C7),
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "Conception & Développement",
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextSecondary,
+                                    fontSize = 12.sp
+                                )
+                                Text(
+                                    text = "Cette application a été réalisée par JuaTech",
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Navy900,
+                                    fontSize = 15.sp
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = "JuaTech conçoit et déploie des solutions numériques performantes, intelligentes et adaptées aux réalités des entreprises modernes (mode hors-ligne résilient et cloud managé).",
+                            fontSize = 13.sp,
+                            color = TextPrimary,
+                            lineHeight = 18.sp
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = Color(0xFFF8FAFC),
+                            border = BorderStroke(1.dp, BorderLight),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text("Contact & Partenariat :", fontWeight = FontWeight.Bold, color = Navy900, fontSize = 12.sp)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text("• Entreprise : JuaTech Technologies", fontSize = 12.sp, color = TextSecondary)
+                                Text("• Support : juatech.ia@gmail.com", fontSize = 12.sp, color = TextSecondary)
+                                Text("• Disponibilité : 24/7 pour les stations partenaires", fontSize = 12.sp, color = TextSecondary)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Points clés de l'application
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.dp, BorderLight)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Fonctionnalités Incluses", fontWeight = FontWeight.Bold, color = Navy900, fontSize = 14.sp)
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        listOf(
+                            "Sécurité & Profils" to "Authentification immédiate par code PIN personnel (Admin / Gérant / Laveurs).",
+                            "Architecture Hybride" to "Fonctionnement 100% hors-ligne SQLite avec réplication cloud Supabase temps-réel.",
+                            "Caisse & Impression POS" to "Support thermique 80mm & 58mm avec aperçu centré et découpe automatique.",
+                            "Rapports & Statistiques" to "Analyses par jour, mois, année avec graphiques visuels et répartition des encaissements.",
+                            "Fidélité & Dettes" to "Historique complet des paiements, suivi des arriérés et fidélité automatique."
+                        ).forEach { (titre, desc) ->
+                            Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                                Text("✔ $titre", fontWeight = FontWeight.Bold, color = Color(0xFF0284C7), fontSize = 12.sp)
+                                Text(desc, fontSize = 11.sp, color = TextSecondary)
+                            }
+                        }
+                    }
+                }
+            }
+
+            item {
+                Text(
+                    text = "© 2026 JuaTech. Tous droits réservés.",
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    fontSize = 11.sp,
+                    color = TextMuted,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp)
+                )
+            }
+        }
     }
 }

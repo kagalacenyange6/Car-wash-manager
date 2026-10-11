@@ -5,6 +5,8 @@ import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.border
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -24,12 +27,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.LocalCarWash
 import androidx.compose.material.icons.filled.MoneyOff
+import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -56,6 +62,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -88,6 +95,7 @@ fun CustomersScreen(
     val customers by viewModel.customers.collectAsState()
     val vehicles by viewModel.vehicles.collectAsState()
     val orders by viewModel.orders.collectAsState()
+    val payments by viewModel.payments.collectAsState()
     val loyaltyList by viewModel.loyaltyAccounts.collectAsState()
     val company by viewModel.company.collectAsState()
     val currency = company?.currencySymbol ?: "$"
@@ -95,6 +103,7 @@ fun CustomersScreen(
     var searchQuery by remember { mutableStateOf("") }
     var showAddDialog by remember { mutableStateOf(false) }
     var selectedCustomerForDetails by remember { mutableStateOf<Customer?>(null) }
+    var customerToDeleteConfirm by remember { mutableStateOf<Customer?>(null) }
 
     val filteredCustomers = remember(customers, searchQuery) {
         if (searchQuery.isBlank()) customers
@@ -178,6 +187,9 @@ fun CustomersScreen(
                             onNewOrder = {
                                 val firstVeh = customerVehicles.firstOrNull()
                                 viewModel.startNewOrder(customer, firstVeh)
+                            },
+                            onDelete = {
+                                customerToDeleteConfirm = customer
                             }
                         )
                     }
@@ -187,6 +199,31 @@ fun CustomersScreen(
                 }
             }
         }
+    }
+
+    // Direct Customer Delete Confirmation Dialog
+    customerToDeleteConfirm?.let { cust ->
+        AlertDialog(
+            onDismissRequest = { customerToDeleteConfirm = null },
+            title = { Text("Supprimer le client ?", fontWeight = FontWeight.Bold, color = Navy900) },
+            text = { Text("Êtes-vous sûr de vouloir supprimer ${cust.name} (${cust.phone}) ? Toutes ses données associées seront supprimées.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteCustomer(cust)
+                        customerToDeleteConfirm = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = StatusDebt)
+                ) {
+                    Text("Oui, Supprimer", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { customerToDeleteConfirm = null }) {
+                    Text("Annuler")
+                }
+            }
+        )
     }
 
     // Add Customer Dialog
@@ -210,14 +247,47 @@ fun CustomersScreen(
             customer = cust,
             vehicles = customerVehicles,
             orders = customerOrders,
+            payments = payments,
             loyaltyPoints = loyalty?.points ?: 0,
             currency = currency,
             onDismiss = { selectedCustomerForDetails = null },
             onNewOrder = {
                 selectedCustomerForDetails = null
                 viewModel.startNewOrder(cust, customerVehicles.firstOrNull())
+            },
+            onDeleteCustomer = {
+                viewModel.deleteCustomer(cust)
+                selectedCustomerForDetails = null
+            },
+            onPayDebt = { order ->
+                selectedCustomerForDetails = null
+                viewModel.openPaymentDialog(order)
             }
         )
+    }
+}
+
+private fun getAvatarGradient(name: String): Brush {
+    val palettes = listOf(
+        listOf(Color(0xFF0284C7), Color(0xFF0F172A)), // Deep ocean & navy
+        listOf(Color(0xFF6366F1), Color(0xFF4338CA)), // Indigo royal
+        listOf(Color(0xFF059669), Color(0xFF065F46)), // Emerald
+        listOf(Color(0xFFD97706), Color(0xFFB45309)), // Amber
+        listOf(Color(0xFF8B5CF6), Color(0xFF6D28D9)), // Purple
+        listOf(Color(0xFFEC4899), Color(0xFFBE185D)), // Rose
+        listOf(Color(0xFF0891B2), Color(0xFF155E75)), // Cyan
+        listOf(Color(0xFFDC2626), Color(0xFF991B1B))  // Crimson
+    )
+    val hash = kotlin.math.abs(name.trim().hashCode())
+    return Brush.linearGradient(palettes[hash % palettes.size])
+}
+
+private fun getInitials(name: String): String {
+    val parts = name.trim().split("\\s+".toRegex()).filter { it.isNotBlank() }
+    return when {
+        parts.isEmpty() -> "CL"
+        parts.size == 1 -> parts[0].take(2).uppercase()
+        else -> "${parts[0].first().uppercaseChar()}${parts[1].first().uppercaseChar()}"
     }
 }
 
@@ -232,6 +302,7 @@ fun CustomerCard(
     currency: String,
     onClick: () -> Unit,
     onNewOrder: () -> Unit,
+    onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -252,23 +323,29 @@ fun CustomerCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Enhanced Avatar with Modern Vibrant Gradient & Shadow Ring
                     Box(
                         modifier = Modifier
-                            .size(44.dp)
+                            .size(46.dp)
                             .clip(CircleShape)
-                            .background(Navy900.copy(alpha = 0.08f)),
+                            .background(getAvatarGradient(customer.name))
+                            .border(1.5.dp, Color.White, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = customer.name.take(2).uppercase(),
-                            fontWeight = FontWeight.Bold,
-                            color = Navy900,
-                            fontSize = 15.sp
+                            text = getInitials(customer.name),
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White,
+                            fontSize = 15.sp,
+                            letterSpacing = 0.5.sp
                         )
                     }
                     Spacer(modifier = Modifier.width(12.dp))
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = customer.name,
                             fontWeight = FontWeight.Bold,
@@ -283,15 +360,30 @@ fun CustomerCard(
                     }
                 }
 
-                // Call Intent Button
-                IconButton(
-                    onClick = {
-                        val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${customer.phone}"))
-                        context.startActivity(intent)
-                    },
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Icon(Icons.Default.Phone, contentDescription = "Appeler", tint = BlueAccent)
+                // Action buttons: Delete & Call
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = onDelete,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Supprimer le client",
+                            tint = Color(0xFFFDA4AF),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                    // Call Intent Button
+                    IconButton(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${customer.phone}"))
+                            context.startActivity(intent)
+                        },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(Icons.Default.Phone, contentDescription = "Appeler", tint = BlueAccent)
+                    }
                 }
             }
 
@@ -513,14 +605,48 @@ fun CustomerDetailSheet(
     customer: Customer,
     vehicles: List<Vehicle>,
     orders: List<WashOrder>,
+    payments: List<com.example.data.model.Payment> = emptyList(),
     loyaltyPoints: Int,
     currency: String,
     onDismiss: () -> Unit,
     onNewOrder: () -> Unit,
+    onDeleteCustomer: () -> Unit = {},
+    onPayDebt: (WashOrder) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val totalSpent = orders.sumOf { it.paidAmount }
     val totalDebt = orders.sumOf { (it.finalAmount - it.paidAmount).coerceAtLeast(0.0) }
+    val unpaidOrders = orders.filter { (it.finalAmount - it.paidAmount) > 0.0 }
+    val customerPayments = remember(orders, payments) {
+        val orderIds = orders.map { it.id }.toSet()
+        payments.filter { it.orderId in orderIds }
+    }
+
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+
+    if (showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            title = { Text("Supprimer le client ?", fontWeight = FontWeight.Bold, color = Navy900) },
+            text = { Text("Êtes-vous sûr de vouloir supprimer ${customer.name} ? Cette action est irréversible.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirmDialog = false
+                        onDeleteCustomer()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = StatusDebt)
+                ) {
+                    Text("Oui, Supprimer", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text("Annuler")
+                }
+            }
+        )
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -531,6 +657,7 @@ fun CustomerDetailSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
+                .verticalScroll(androidx.compose.foundation.rememberScrollState())
                 .padding(bottom = 32.dp)
         ) {
             Row(
@@ -538,12 +665,34 @@ fun CustomerDetailSheet(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text(
-                        text = customer.name,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = Navy900, fontSize = 18.sp)
-                    )
-                    Text(text = customer.phone, fontSize = 13.sp, color = TextSecondary)
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(54.dp)
+                            .clip(CircleShape)
+                            .background(getAvatarGradient(customer.name))
+                            .border(2.dp, Color.White, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = getInitials(customer.name),
+                            fontWeight = FontWeight.Black,
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            letterSpacing = 0.5.sp
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(14.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = customer.name,
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold, color = Navy900, fontSize = 18.sp)
+                        )
+                        Text(text = customer.phone, fontSize = 13.sp, color = TextSecondary)
+                    }
                 }
                 IconButton(onClick = onDismiss) {
                     Icon(Icons.Default.Close, contentDescription = "Fermer")
@@ -573,7 +722,7 @@ fun CustomerDetailSheet(
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Column(modifier = Modifier.padding(10.dp)) {
-                        Text("Dette", fontSize = 11.sp, color = if (totalDebt > 0) StatusDebt else TextSecondary)
+                        Text("Dette active", fontSize = 11.sp, color = if (totalDebt > 0) StatusDebt else TextSecondary)
                         Text(String.format(Locale.US, "%.1f %s", totalDebt, currency), fontWeight = FontWeight.Bold, color = if (totalDebt > 0) StatusDebt else Navy900, fontSize = 14.sp)
                     }
                 }
@@ -591,25 +740,143 @@ fun CustomerDetailSheet(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            Text("Véhicules (${vehicles.size}) :", fontWeight = FontWeight.Bold, color = Navy900, fontSize = 14.sp)
+            // Section 1: Dettes & Impayés actifs
+            if (unpaidOrders.isNotEmpty()) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFFFFF1F2),
+                    border = BorderStroke(1.dp, Color(0xFFFECDD3)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.MoneyOff, contentDescription = null, tint = StatusDebt, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Dettes à Recouvrer (${unpaidOrders.size})", fontWeight = FontWeight.Bold, color = Color(0xFF9F1239), fontSize = 13.sp)
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        unpaidOrders.forEach { ord ->
+                            val remainingDebt = (ord.finalAmount - ord.paidAmount).coerceAtLeast(0.0)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("${ord.orderNumber} • ${ord.vehiclePlate}", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Navy900)
+                                    Text("Reste : ${String.format(Locale.US, "%.1f %s", remainingDebt, currency)} (Payé ${ord.paidAmount} / ${ord.finalAmount})", fontSize = 11.sp, color = StatusDebt)
+                                }
+                                Button(
+                                    onClick = { onPayDebt(ord) },
+                                    colors = ButtonDefaults.buttonColors(containerColor = StatusDebt),
+                                    shape = RoundedCornerShape(6.dp),
+                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                                    modifier = Modifier.height(30.dp)
+                                ) {
+                                    Text("Régler dette", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                }
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(14.dp))
+            }
+
+            // Section 2: Historique des paiements encaissés
+            Text("Historique des Règlements (${customerPayments.size}) :", fontWeight = FontWeight.Bold, color = Navy900, fontSize = 13.sp)
             Spacer(modifier = Modifier.height(6.dp))
-            vehicles.forEach { v ->
-                Text("• ${v.plate} - ${v.brand} ${v.model} (${v.washCount} lavages)", fontSize = 13.sp, color = TextPrimary)
+            if (customerPayments.isEmpty()) {
+                Text("Aucun paiement direct enregistré.", fontSize = 12.sp, color = TextSecondary)
+            } else {
+                customerPayments.take(6).forEach { pay ->
+                    val payDate = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.FRANCE).format(java.util.Date(pay.createdAt))
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4)),
+                        border = BorderStroke(1.dp, Color(0xFFBBF7D0)),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Payment, contentDescription = null, tint = Color(0xFF16A34A), modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Column {
+                                    Text("${pay.orderNumber} • ${pay.paymentMethod}", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Navy900)
+                                    Text("$payDate • Ref: ${pay.reference.ifBlank { "Direct" }}", fontSize = 10.sp, color = TextSecondary)
+                                }
+                            }
+                            Text(
+                                text = "+${String.format(Locale.US, "%.1f %s", pay.amount, currency)}",
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color(0xFF16A34A),
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            Button(
-                onClick = onNewOrder,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Navy900,
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(12.dp),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
-                modifier = Modifier.fillMaxWidth().height(48.dp)
+            // Section 3: Véhicules du client
+            Text("Véhicules (${vehicles.size}) :", fontWeight = FontWeight.Bold, color = Navy900, fontSize = 13.sp)
+            Spacer(modifier = Modifier.height(4.dp))
+            if (vehicles.isEmpty()) {
+                Text("Aucun véhicule associé.", fontSize = 12.sp, color = TextSecondary)
+            } else {
+                vehicles.forEach { v ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(color = Color(0xFFFEF3C7), shape = RoundedCornerShape(4.dp)) {
+                            Text(v.plate, fontWeight = FontWeight.Bold, fontSize = 11.sp, color = Color(0xFF92400E), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("${v.brand} ${v.model} (${v.washCount} lavages)", fontSize = 12.sp, color = TextPrimary)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text("Nouvelle prestation pour ce client", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
+                OutlinedButton(
+                    onClick = { showDeleteConfirmDialog = true },
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = Color.White,
+                        contentColor = StatusDebt
+                    ),
+                    border = BorderStroke(1.dp, Color(0xFFFECDD3)),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.weight(1f).height(48.dp)
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = null, tint = StatusDebt, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Supprimer", color = StatusDebt, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                }
+
+                Button(
+                    onClick = onNewOrder,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Navy900,
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
+                    modifier = Modifier.weight(2f).height(48.dp)
+                ) {
+                    Text("Nouvelle prestation", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
+                }
             }
         }
     }

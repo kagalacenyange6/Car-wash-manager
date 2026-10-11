@@ -178,114 +178,31 @@ fun CarWashTopBar(
                     }
                 }
 
-                // Right: Quick Action Controls (Cloud Sync, Employee Pill, Notifications)
+                // Right: Quick Action Controls (Avatar initial button & Notification Bell)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Sync Pill (Glassmorphic)
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = when {
-                            syncState == SyncState.SYNCING -> Color(0xFF1E3A8A)
-                            isOnline -> Color(0xFF064E3B)
-                            else -> Color(0xFF78350F)
-                        },
-                        border = BorderStroke(
-                            1.dp,
-                            when {
-                                syncState == SyncState.SYNCING -> Color(0xFF60A5FA)
-                                isOnline -> Color(0xFF34D399)
-                                else -> Color(0xFFFBBF24)
-                            }
-                        ),
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable(onClick = onSyncClick)
-                            .testTag("sync_status_chip")
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(5.dp),
-                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp)
-                        ) {
-                            when {
-                                syncState == SyncState.SYNCING -> {
-                                    Icon(
-                                        imageVector = Icons.Default.Sync,
-                                        contentDescription = "Synchronisation",
-                                        tint = Color(0xFF93C5FD),
-                                        modifier = Modifier
-                                            .size(14.dp)
-                                            .rotate(rotation)
-                                    )
-                                    Text(
-                                        text = "Sync",
-                                        color = Color.White,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                                isOnline -> {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(7.dp)
-                                            .clip(CircleShape)
-                                            .background(Color(0xFF34D399))
-                                    )
-                                    Text(
-                                        text = "Cloud",
-                                        color = Color(0xFFA7F3D0),
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                                else -> {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(7.dp)
-                                            .clip(CircleShape)
-                                            .background(Color(0xFFFBBF24))
-                                    )
-                                    Text(
-                                        text = "SQLite",
-                                        color = Color(0xFFFDE68A),
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    // User Avatar with Initial Letter (click opens user info, sync status & logout)
+                    val empName = currentEmployee?.name?.trim() ?: "Admin"
+                    val initialLetter = empName.firstOrNull()?.uppercaseChar()?.toString() ?: "A"
 
-                    // User / Employee Badge
                     Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFF1E293B),
-                        border = BorderStroke(1.dp, Color(0xFF334155)),
+                        shape = CircleShape,
+                        color = Color(0xFF0284C7),
+                        border = BorderStroke(1.5.dp, Color(0xFF38BDF8)),
                         modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
+                            .size(38.dp)
+                            .clip(CircleShape)
                             .clickable(onClick = onEmployeeClick)
-                            .testTag("employee_profile_chip")
+                            .testTag("employee_avatar_button")
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(5.dp),
-                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = "Employé",
-                                tint = Color(0xFF38BDF8),
-                                modifier = Modifier.size(15.dp)
-                            )
+                        Box(contentAlignment = Alignment.Center) {
                             Text(
-                                text = currentEmployee?.name?.split(" ")?.firstOrNull() ?: "Admin",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp
-                                )
+                                text = initialLetter,
+                                color = Color.White,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 16.sp
                             )
                         }
                     }
@@ -295,7 +212,7 @@ fun CarWashTopBar(
                         shape = CircleShape,
                         color = Color(0xFF1E293B),
                         border = BorderStroke(1.dp, Color(0xFF334155)),
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(38.dp)
                     ) {
                         IconButton(
                             onClick = onNotificationsClick,
@@ -323,7 +240,7 @@ fun CarWashTopBar(
                                     imageVector = Icons.Default.Notifications,
                                     contentDescription = "Notifications",
                                     tint = Color(0xFFF1F5F9),
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(19.dp)
                                 )
                             }
                         }

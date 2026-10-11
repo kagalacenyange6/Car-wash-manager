@@ -154,57 +154,155 @@ class SupabaseSyncManager(
     }
 
     private fun uploadTable(config: SupabaseConfig, table: String, jsonArray: JSONArray) {
-        val url = "${config.url}/rest/v1/$table"
+        val baseUrl = config.url.trim().removeSuffix("/").removeSuffix("/rest/v1")
+        val url = "$baseUrl/rest/v1/$table"
         val requestBody = jsonArray.toString().toRequestBody(jsonMediaType)
 
         val request = Request.Builder()
             .url(url)
-            .addHeader("apikey", config.anonKey)
-            .addHeader("Authorization", "Bearer ${config.anonKey}")
+            .addHeader("apikey", config.anonKey.trim())
+            .addHeader("Authorization", "Bearer ${config.anonKey.trim()}")
             .addHeader("Content-Type", "application/json")
             .addHeader("Prefer", "resolution=merge-duplicates")
             .post(requestBody)
             .build()
 
         val response = httpClient.newCall(request).execute()
+        val responseCode = response.code
+        val responseBody = response.body?.string() ?: ""
         response.close()
+
+        if (responseCode !in 200..299) {
+            val diagnostic = when {
+                responseCode == 401 || responseCode == 403 ->
+                    "Accès refusé (HTTP $responseCode). La clé anonKey n'est pas autorisée ou RLS bloque l'écriture. Exécutez le script SQL fourni."
+                responseCode == 404 || responseBody.contains("does not exist") || responseBody.contains("42P01") ->
+                    "La table '$table' n'existe pas encore sur votre base Supabase. Cliquez sur 'Copier le script SQL' et exécutez-le dans Supabase > SQL Editor."
+                responseBody.contains("row-level security") || responseBody.contains("violates row-level") ->
+                    "Sécurité RLS active sur '$table'. Exécutez le script SQL qui applique 'ALTER TABLE $table DISABLE ROW LEVEL SECURITY;'."
+                else ->
+                    "HTTP $responseCode: ${responseBody.take(150)}"
+            }
+            throw Exception("Table '$table': $diagnostic")
+        }
     }
+
+    suspend fun clearRemoteTables(config: SupabaseConfig): Pair<Boolean, String> =
+        withContext(Dispatchers.IO) {
+            if (!config.isConfigured) {
+                return@withContext Pair(false, "Supabase non configuré")
+            }
+            try {
+                val baseUrl = config.url.trim().removeSuffix("/").removeSuffix("/rest/v1")
+                val tables = listOf(
+                    "wash_order_items",
+                    "payments",
+                    "wash_orders",
+                    "expenses",
+                    "stock_movements",
+                    "products",
+                    "vehicles",
+                    "customers",
+                    "loyalty_accounts",
+                    "notifications",
+                    "audit_logs"
+                )
+                for (tbl in tables) {
+                    val url = "$baseUrl/rest/v1/$tbl?id=not.is.null"
+                    val request = Request.Builder()
+                        .url(url)
+                        .addHeader("apikey", config.anonKey.trim())
+                        .addHeader("Authorization", "Bearer ${config.anonKey.trim()}")
+                        .delete()
+                        .build()
+                    val res = httpClient.newCall(request).execute()
+                    res.close()
+                }
+                Pair(true, "Base de données Supabase distante vidée avec succès !")
+            } catch (e: Exception) {
+                Pair(false, "Échec vidage Supabase : ${e.localizedMessage}")
+            }
+        }
 
     suspend fun testConnection(url: String, anonKey: String): Pair<Boolean, String> =
         withContext(Dispatchers.IO) {
-            val trimmedUrl = url.trim().removeSuffix("/")
-            val trimmedKey = anonKey.trim()
+            var trimmedUrl = url.trim().replace("\n", "").replace("\r", "").removeSuffix("/")
+            val trimmedKey = anonKey.trim().replace("\n", "").replace("\r", "")
+
+            if (trimmedUrl.contains("supabase.com/dashboard") || trimmedUrl.contains("/project/")) {
+                return@withContext Pair(
+                    false,
+                    "URL incorrecte : Vous avez entré l'URL du tableau de bord de votre navigateur. Vous devez renseigner l'URL d'API de votre projet (ex: https://[identifiant].supabase.co) trouvable dans Supabase > Project Settings > Configuration > API."
+                )
+            }
+
+            // Normalize URL if protocol was omitted
+            if (!trimmedUrl.startsWith("http://") && !trimmedUrl.startsWith("https://")) {
+                trimmedUrl = "https://$trimmedUrl"
+            }
+            trimmedUrl = trimmedUrl.removeSuffix("/rest/v1").removeSuffix("/")
 
             if (!trimmedUrl.startsWith("https://")) {
-                return@withContext Pair(false, "L'URL Supabase doit débuter par https://")
+                return@withContext Pair(false, "L'URL Supabase doit débuter par https:// (ex: https://xyz.supabase.co)")
             }
             if (trimmedKey.isBlank()) {
-                return@withContext Pair(false, "La clé anon Supabase est requise")
+                return@withContext Pair(false, "La clé API anon Supabase est requise (clé publique anon du projet).")
             }
 
             try {
-                // Perform a simple lightweight health/read request
-                val testUrl = "$trimmedUrl/rest/v1/"
-                val request = Request.Builder()
-                    .url(testUrl)
+                // Perform check on Supabase PostgREST table endpoint
+                // Querying /rest/v1/companies or /rest/v1/customers with limit 1 is the standard test with an anon key
+                val testTableReq = Request.Builder()
+                    .url("$trimmedUrl/rest/v1/companies?limit=1")
                     .addHeader("apikey", trimmedKey)
                     .addHeader("Authorization", "Bearer $trimmedKey")
                     .get()
                     .build()
 
-                val response = httpClient.newCall(request).execute()
-                val code = response.code
-                response.close()
+                val tableRes = httpClient.newCall(testTableReq).execute()
+                val tableCode = tableRes.code
+                val tableBody = tableRes.body?.string() ?: ""
+                tableRes.close()
 
-                if (code in 200..299) {
-                    Pair(true, "Connexion à Supabase réussie (HTTP $code) !")
-                } else if (code == 401 || code == 403) {
-                    Pair(false, "Authentification Supabase refusée (HTTP $code) : vérifiez la clé anon.")
-                } else {
-                    Pair(true, "Serveur Supabase accessible (Code HTTP $code).")
+                if (tableCode in 200..299) {
+                    return@withContext Pair(true, "Connexion et tables Supabase prêtes ! Synchronisation possible.")
+                } else if (tableCode == 404 || tableBody.contains("does not exist") || tableBody.contains("42P01")) {
+                    return@withContext Pair(true, "Connexion API Supabase validée (HTTP 200) !\nAttention : Les tables du Car Wash ne sont pas encore créées dans votre base. Utilisez le bouton 'Copier le script SQL' et exécutez-le dans Supabase > SQL Editor.")
                 }
+
+                // If companies returned another code, check /rest/v1/customers
+                val testCustReq = Request.Builder()
+                    .url("$trimmedUrl/rest/v1/customers?limit=1")
+                    .addHeader("apikey", trimmedKey)
+                    .addHeader("Authorization", "Bearer $trimmedKey")
+                    .get()
+                    .build()
+
+                val custRes = httpClient.newCall(testCustReq).execute()
+                val custCode = custRes.code
+                val custBody = custRes.body?.string() ?: ""
+                custRes.close()
+
+                when {
+                    custCode in 200..299 -> {
+                        Pair(true, "Connexion et tables Supabase prêtes ! Synchronisation possible.")
+                    }
+                    custCode == 404 || custBody.contains("does not exist") || custBody.contains("42P01") -> {
+                        Pair(true, "Connexion API Supabase validée !\nAttention : Les tables ne sont pas encore créées. Utilisez le bouton 'Copier le script SQL' pour les générer dans Supabase.")
+                    }
+                    custCode == 401 || custCode == 403 || tableCode == 401 || tableCode == 403 -> {
+                        Pair(false, "Erreur d'authentification (HTTP ${if (custCode == 401 || custCode == 403) custCode else tableCode}) : Clé API non autorisée ou RLS actif. Vérifiez la clé 'anon / public' dans Supabase.")
+                    }
+                    else -> {
+                        Pair(false, "Réponse Supabase inattendue (HTTP $custCode) : ${custBody.take(160)}")
+                    }
+                }
+            } catch (e: java.net.UnknownHostException) {
+                Pair(false, "Hôte Supabase introuvable ($trimmedUrl) : Vérifiez que l'URL est correcte et que l'appareil a accès à Internet.")
+            } catch (e: java.net.SocketTimeoutException) {
+                Pair(false, "Délai d'attente dépassé (Timeout) : Le serveur Supabase n'a pas répondu à temps. Vérifiez votre connexion Internet.")
             } catch (e: Exception) {
-                Pair(false, "Échec de connexion : ${e.localizedMessage ?: "Hôte introuvable ou hors-ligne"}")
+                Pair(false, "Erreur de connexion : ${e.localizedMessage ?: e.javaClass.simpleName}")
             }
         }
 

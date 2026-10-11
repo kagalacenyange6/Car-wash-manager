@@ -20,6 +20,8 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -53,8 +56,15 @@ fun ProfileBottomSheet(
     currentEmployee: Employee?,
     onSelectEmployee: (Employee) -> Unit,
     onDismiss: () -> Unit,
+    isOnline: Boolean = true,
+    syncState: com.example.data.sync.SyncState = com.example.data.sync.SyncState.IDLE,
+    onSyncClick: () -> Unit = {},
+    onLogout: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val emp = currentEmployee ?: employees.firstOrNull()
+    val initialLetter = emp?.name?.trim()?.firstOrNull()?.uppercaseChar()?.toString() ?: "U"
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = Color.White,
@@ -71,108 +81,169 @@ fun ProfileBottomSheet(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text(
-                        text = "Session Utilisateur & Rôles",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = Navy900,
-                            fontSize = 18.sp
-                        )
+                Text(
+                    text = "Mon Compte & Session",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = Navy900,
+                        fontSize = 18.sp
                     )
-                    Text(
-                        text = "Basculez facilement entre les profils pour tester les permissions",
-                        style = MaterialTheme.typography.bodySmall.copy(color = TextSecondary)
-                    )
-                }
+                )
                 IconButton(onClick = onDismiss) {
                     Icon(Icons.Default.Close, contentDescription = "Fermer")
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            employees.forEach { emp ->
-                val isCurrent = emp.id == currentEmployee?.id
-                val roleLabel = when (emp.role) {
-                    UserRole.ADMIN.name -> "Administrateur (Tous droits)"
-                    UserRole.MANAGER.name -> "Gérant (Gestion & Rapports)"
-                    else -> "Employé (Lavage & File)"
-                }
-
-                Card(
+            // User Info Card
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, BorderLight),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                        .clickable {
-                            onSelectEmployee(emp)
-                            onDismiss()
-                        }
-                        .testTag("switch_user_${emp.id}"),
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (isCurrent) Color(0xFFE0F2FE) else Color.White
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(
-                        width = if (isCurrent) 2.dp else 1.dp,
-                        color = if (isCurrent) BlueAccent else BorderLight
-                    )
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
+                    // Avatar with Initial Letter
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(42.dp)
-                                .clip(CircleShape)
-                                .background(if (isCurrent) BlueAccent else Navy900.copy(alpha = 0.08f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = if (emp.role == UserRole.ADMIN.name) Icons.Default.Shield else Icons.Default.Person,
-                                contentDescription = null,
-                                tint = if (isCurrent) Color.White else Navy900
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(12.dp))
-
-                        Column(modifier = Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = emp.name,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isCurrent) Navy900 else TextPrimary,
-                                    fontSize = 15.sp
+                            .size(52.dp)
+                            .clip(CircleShape)
+                            .background(
+                                Brush.linearGradient(
+                                    listOf(Color(0xFF0284C7), Color(0xFF0F172A))
                                 )
-                                if (isCurrent) {
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Surface(color = BlueAccent, shape = RoundedCornerShape(4.dp)) {
-                                        Text(
-                                            "Actif",
-                                            color = Color.White,
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-                                        )
-                                    }
-                                }
-                            }
-                            Text(
-                                text = roleLabel,
-                                fontSize = 12.sp,
-                                color = if (isCurrent) BlueAccent else TextSecondary
-                            )
-                        }
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = initialLetter,
+                            fontWeight = FontWeight.Black,
+                            color = Color.White,
+                            fontSize = 22.sp
+                        )
+                    }
 
-                        if (isCurrent) {
-                            Icon(Icons.Default.Check, contentDescription = null, tint = BlueAccent)
+                    Spacer(modifier = Modifier.width(14.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = emp?.name ?: "Utilisateur",
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Navy900,
+                            fontSize = 16.sp
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Rôle : ${emp?.role ?: "EMPLOYEE"} • Tél : ${emp?.phone ?: "-"}",
+                            fontSize = 12.sp,
+                            color = TextSecondary
+                        )
+                        if (emp?.role == "ADMIN") {
+                            Surface(
+                                color = Color(0xFFDCFCE7),
+                                shape = RoundedCornerShape(4.dp),
+                                modifier = Modifier.padding(top = 4.dp)
+                            ) {
+                                Text(
+                                    "Accès Administrateur",
+                                    color = Color(0xFF166534),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
                         }
                     }
                 }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Connection Status & Management (Cloud or SQLite)
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = if (isOnline) Color(0xFFF0FDF4) else Color(0xFFFFFBEB)
+                ),
+                shape = RoundedCornerShape(14.dp),
+                border = BorderStroke(1.dp, if (isOnline) Color(0xFFBBF7D0) else Color(0xFFFDE68A)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        onDismiss()
+                        onSyncClick()
+                    }
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .clip(CircleShape)
+                                .background(if (isOnline) Color(0xFF16A34A) else Color(0xFFD97706))
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column {
+                            Text(
+                                text = if (isOnline) "Connexion Cloud Supabase" else "Stockage Local SQLite",
+                                fontWeight = FontWeight.Bold,
+                                color = Navy900,
+                                fontSize = 13.sp
+                            )
+                            Text(
+                                text = if (isOnline) "En ligne • Synchronisation automatique" else "Hors-ligne • Données conservées localement",
+                                fontSize = 11.sp,
+                                color = if (isOnline) Color(0xFF166534) else Color(0xFF92400E)
+                            )
+                        }
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (isOnline) Color(0xFF16A34A) else Color(0xFFD97706)
+                    ) {
+                        Text(
+                            text = "Gérer",
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // Logout Button
+            Button(
+                onClick = {
+                    onDismiss()
+                    onLogout()
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFE11D48),
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(12.dp),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .testTag("logout_button")
+            ) {
+                Text("Se déconnecter (Verrouiller)", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
             }
         }
     }

@@ -251,4 +251,38 @@ interface CarWashDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAuditLog(log: AuditLog)
+
+    // Clear all tables for database reset
+    @Query("DELETE FROM wash_orders")
+    suspend fun clearWashOrders()
+
+    @Query("DELETE FROM wash_order_items")
+    suspend fun clearWashOrderItems()
+
+    @Query("DELETE FROM payments")
+    suspend fun clearPayments()
+
+    @Query("DELETE FROM expenses")
+    suspend fun clearExpenses()
+
+    @Query("DELETE FROM products")
+    suspend fun clearProducts()
+
+    @Query("DELETE FROM stock_movements")
+    suspend fun clearStockMovements()
+
+    @Query("DELETE FROM vehicles")
+    suspend fun clearVehicles()
+
+    @Query("DELETE FROM customers")
+    suspend fun clearCustomers()
+
+    @Query("DELETE FROM loyalty_accounts")
+    suspend fun clearLoyaltyAccounts()
+
+    @Query("DELETE FROM notifications")
+    suspend fun clearNotifications()
+
+    @Query("DELETE FROM audit_logs")
+    suspend fun clearAuditLogs()
 }

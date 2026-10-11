@@ -130,7 +130,7 @@ object ReceiptPrinter {
         printManager.print(
             jobName,
             object : PrintDocumentAdapter() {
-                private var pdfDocument: PdfDocument? = null
+                private var savedAttributes: PrintAttributes? = null
 
                 override fun onLayout(
                     oldAttributes: PrintAttributes?,
@@ -143,6 +143,8 @@ object ReceiptPrinter {
                         callback?.onLayoutCancelled()
                         return
                     }
+
+                    savedAttributes = newAttributes
 
                     val pdi = PrintDocumentInfo.Builder(jobName)
                         .setContentType(PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
@@ -167,19 +169,31 @@ object ReceiptPrinter {
                     }
 
                     val lineHeight = 14f
-                    val pageHeight = (lines.size * lineHeight + 80).toInt().coerceAtLeast(400)
-                    val pageWidth = if (company.receiptPaperWidth == "58mm") 230 else 300 // points approx for 80mm
+                    val defaultPageWidth = if (company.receiptPaperWidth == "58mm") 230 else 300
+                    val actualWidth = savedAttributes?.mediaSize?.let {
+                        ((it.widthMils * 72f) / 1000f).toInt()
+                    } ?: defaultPageWidth
+
+                    val actualHeight = savedAttributes?.mediaSize?.let {
+                        ((it.heightMils * 72f) / 1000f).toInt()
+                    } ?: (lines.size * lineHeight + 80).toInt().coerceAtLeast(400)
 
                     val doc = PdfDocument()
-                    val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
+                    val pageInfo = PdfDocument.PageInfo.Builder(actualWidth, actualHeight, 1).create()
                     val page = doc.startPage(pageInfo)
                     val canvas: Canvas = page.canvas
 
                     canvas.drawColor(Color.WHITE)
 
-                    var y = 24f
+                    // Perfectly center the ticket content horizontally on the printed sheet
+                    val maxLineLength = lines.maxOfOrNull { it.length } ?: 36
+                    val charWidth = paint.measureText(" ")
+                    val receiptBlockWidth = maxLineLength * charWidth
+                    val startX = ((actualWidth - receiptBlockWidth) / 2f).coerceAtLeast(10f)
+
+                    var y = 28f
                     for (line in lines) {
-                        canvas.drawText(line, 12f, y, paint)
+                        canvas.drawText(line, startX, y, paint)
                         y += lineHeight
                     }
 

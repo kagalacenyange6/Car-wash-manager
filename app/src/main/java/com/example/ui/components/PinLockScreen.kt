@@ -71,13 +71,8 @@ fun PinLockScreen(
     onUnlocked: (Employee) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var selectedEmployee by remember(employees, currentEmployee) {
-        mutableStateOf(currentEmployee ?: employees.firstOrNull())
-    }
-
     var pinInput by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var showUserPicker by remember { mutableStateOf(false) }
 
     fun handleDigit(d: String) {
         if (pinInput.length < 4) {
@@ -86,15 +81,21 @@ fun PinLockScreen(
             errorMessage = null
 
             if (next.length == 4) {
-                val emp = selectedEmployee
-                if (emp != null) {
-                    val expectedPin = emp.pinCode.ifBlank { "0000" }
-                    if (next == expectedPin) {
-                        onUnlocked(emp)
-                    } else {
-                        errorMessage = "Code PIN incorrect"
-                        pinInput = ""
+                // Find matching employee by entered PIN code directly
+                val matched = employees.firstOrNull { emp ->
+                    val effectivePin = emp.pinCode.ifBlank {
+                        if (emp.role.equals("ADMIN", ignoreCase = true)) "0000" else ""
                     }
+                    effectivePin == next
+                } ?: if (next == "0000") {
+                    employees.firstOrNull { it.role.equals("ADMIN", ignoreCase = true) } ?: employees.firstOrNull()
+                } else null
+
+                if (matched != null) {
+                    onUnlocked(matched)
+                } else {
+                    errorMessage = "Code PIN incorrect"
+                    pinInput = ""
                 }
             }
         }
@@ -154,101 +155,17 @@ fun PinLockScreen(
                     fontWeight = FontWeight.Black,
                     color = Color.White,
                     letterSpacing = 1.2.sp,
-                    fontSize = 20.sp
+                    fontSize = 22.sp
                 )
             )
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            // User switcher pill
-            Surface(
-                color = Color(0xFF1E293B),
-                shape = RoundedCornerShape(20.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF334155)),
-                modifier = Modifier.clickable { showUserPicker = !showUserPicker }
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = if (selectedEmployee?.role == "ADMIN") Icons.Default.Shield else Icons.Default.Lock,
-                        contentDescription = null,
-                        tint = BlueLight,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "${selectedEmployee?.name ?: "Utilisateur"} (${selectedEmployee?.role ?: "Rôle"})",
-                        color = Color.White,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("▾", color = Color(0xFF94A3B8), fontSize = 12.sp)
-                }
-            }
-
-            if (selectedEmployee?.role == "ADMIN" && selectedEmployee?.pinCode == "0000") {
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = "Code PIN initial admin : 0000",
-                    color = BlueLight,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-
-            // User dropdown modal/card if toggled
-            AnimatedVisibility(visible = showUserPicker) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 10.dp)
-                        .background(Color(0xFF0F172A), RoundedCornerShape(12.dp))
-                        .border(1.dp, Color(0xFF334155), RoundedCornerShape(12.dp))
-                        .padding(8.dp)
-                ) {
-                    Text(
-                        text = "Sélectionner votre compte :",
-                        color = Color(0xFF94A3B8),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                    employees.forEach { emp ->
-                        val isSel = emp.id == selectedEmployee?.id
-                        Surface(
-                            color = if (isSel) Color(0xFF1E293B) else Color.Transparent,
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    selectedEmployee = emp
-                                    pinInput = ""
-                                    errorMessage = null
-                                    showUserPicker = false
-                                }
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "${emp.name} (${emp.role})",
-                                    color = if (isSel) BlueLight else Color.White,
-                                    fontSize = 13.sp,
-                                    fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal
-                                )
-                                if (isSel) {
-                                    Icon(Icons.Default.Check, contentDescription = null, tint = BlueLight, modifier = Modifier.size(16.dp))
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            Text(
+                text = "Authentification sécurisée par Code PIN",
+                color = Color(0xFF94A3B8),
+                fontSize = 13.sp
+            )
 
             Spacer(modifier = Modifier.height(20.dp))
 

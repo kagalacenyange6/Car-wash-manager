@@ -18,8 +18,9 @@ data class Company(
     val receiptHeaderNote: String = "Bienvenue chez Flash Auto Wash - Service Premium",
     val receiptFooterNote: String = "Merci pour votre fidélité ! À très bientôt.",
     val mobileMoneyNumber: String = "+243 81 234 5678",
-    val supabaseUrl: String = "https://your-project.supabase.co",
-    val supabaseAnonKey: String = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    val showDecimals: Boolean = true,
+    val supabaseUrl: String = "https://hzeneirrrbjvildraoik.supabase.co",
+    val supabaseAnonKey: String = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6ZW5laXJycmJqdmlsZHJhb2lrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5ODY0NjYsImV4cCI6MjEwNjU2MjQ2Nn0.h9k_Rz8U8fDzZL5GDj2TYONEqpuTmIMkpzYa5kq5Yco"
 )
 
 @Entity(tableName = "customers")
