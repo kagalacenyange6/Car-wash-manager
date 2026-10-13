@@ -421,14 +421,11 @@ class CarWashRepository(private val dao: CarWashDao) {
 
     // Seed Demo Data
     suspend fun seedDemoDataIfEmpty() {
-        // Ensure default admin employee has name Patrick KARUBANDIKA and pin 0000
+        // Preserve existing admin employee without overwriting user-configured PIN
         val existingAdmin = dao.getEmployeeById("emp-admin")
         if (existingAdmin != null) {
             var updated = existingAdmin
-            if (updated.pinCode == "1111") {
-                updated = updated.copy(pinCode = "0000")
-            }
-            if (updated.name != "Patrick KARUBANDIKA") {
+            if (updated.name != "Patrick KARUBANDIKA" && updated.name.isBlank()) {
                 updated = updated.copy(name = "Patrick KARUBANDIKA")
             }
             if (updated != existingAdmin) {

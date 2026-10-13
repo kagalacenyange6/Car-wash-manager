@@ -55,6 +55,7 @@ import com.example.data.model.OrderStatus
 import com.example.data.model.WashOrder
 import com.example.ui.CarWashViewModel
 import com.example.ui.components.EmptyStateView
+import com.example.ui.components.PlateBadge
 import com.example.ui.components.StatusChip
 import com.example.ui.components.carWashInputTextStyle
 import com.example.ui.components.carWashTextFieldColors
@@ -225,9 +226,9 @@ fun OrderItemCard(
             .fillMaxWidth()
             .testTag("order_item_${order.id}"),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(1.dp, BorderLight),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             // Header: OrderNumber, Date, Status
@@ -254,30 +255,29 @@ fun OrderItemCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Vehicle & Customer
+            // Vehicle & Customer with official DRC PlateBadge (matching Accueil)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Surface(
-                    color = Color(0xFFFEF3C7),
-                    shape = RoundedCornerShape(4.dp)
-                ) {
+                PlateBadge(plate = order.vehiclePlate)
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = order.vehiclePlate,
-                        color = Color(0xFF92400E),
+                        text = order.vehicleModel,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
+                        color = Navy900,
+                        maxLines = 1
+                    )
+                    Text(
+                        text = "• ${order.customerName}",
                         fontSize = 12.sp,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        fontWeight = FontWeight.Medium,
+                        color = TextSecondary,
+                        maxLines = 1
                     )
                 }
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "${order.vehicleModel} • ${order.customerName}",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = TextPrimary
-                )
             }
 
             Spacer(modifier = Modifier.height(6.dp))

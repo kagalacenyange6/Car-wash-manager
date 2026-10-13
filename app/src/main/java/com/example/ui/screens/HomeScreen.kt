@@ -31,6 +31,8 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PointOfSale
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -45,6 +47,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -90,6 +93,15 @@ fun HomeScreen(
     val pendingCount = queueOrders.count { it.status == OrderStatus.PENDING.name }
     val inProgressCount = queueOrders.count { it.status == OrderStatus.IN_PROGRESS.name }
 
+    val todayDateStr = remember {
+        val sdf = SimpleDateFormat("EEEE d MMMM yyyy", Locale.FRENCH)
+        sdf.format(Date()).replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.FRENCH) else it.toString() }
+    }
+    val greeting = remember {
+        val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        if (hour in 5..17) "Bonjour" else "Bonsoir"
+    }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -102,12 +114,77 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(6.dp))
         }
 
+        // 0. EN-TÊTE ACCUEIL AVEC SALUTATION & DATE
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 2.dp, bottom = 2.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "$greeting, ${company?.name ?: "Flash Auto Wash"}",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Navy900,
+                            fontSize = 18.sp,
+                            letterSpacing = (-0.3).sp
+                        )
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarToday,
+                            contentDescription = null,
+                            tint = Color(0xFF64748B),
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(
+                            text = todayDateStr,
+                            color = Color(0xFF64748B),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                // Badge Statut Atelier En Direct
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color(0xFFECFDF5),
+                    border = BorderStroke(1.dp, Color(0xFFA7F3D0))
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF10B981))
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Atelier actif",
+                            color = Color(0xFF065F46),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+
         // 1. HERO COMMAND SECTION : "NOUVELLE PRESTATION"
         item {
             Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = Color.Transparent,
-                shadowElevation = 4.dp,
+                shape = RoundedCornerShape(22.dp),
+                shadowElevation = 6.dp,
+                border = BorderStroke(1.dp, Color(0xFF38BDF8).copy(alpha = 0.25f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Box(
@@ -118,7 +195,7 @@ fun HomeScreen(
                                 colors = listOf(
                                     Color(0xFF0B192C),
                                     Color(0xFF162942),
-                                    Color(0xFF0F1E36)
+                                    Color(0xFF0F2642)
                                 )
                             )
                         )
@@ -130,89 +207,137 @@ fun HomeScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column {
-                                Text(
-                                    text = "Point d'Accueil & Lavage",
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White,
-                                        fontSize = 17.sp
-                                    )
-                                )
-                                Text(
-                                    text = "Enregistrement rapide en 3 clics",
-                                    style = MaterialTheme.typography.bodySmall.copy(
-                                        color = Color.White.copy(alpha = 0.7f),
-                                        fontSize = 12.sp
-                                    )
-                                )
-                            }
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = Color.White.copy(alpha = 0.12f)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(Color.White.copy(alpha = 0.12f)),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(7.dp)
-                                            .clip(CircleShape)
-                                            .background(Color(0xFF10B981))
-                                    )
-                                    Spacer(modifier = Modifier.width(5.dp))
-                                    Text(
-                                        text = "Atelier actif",
-                                        color = Color.White,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.SemiBold
+                                    Icon(
+                                        imageVector = Icons.Default.LocalCarWash,
+                                        contentDescription = null,
+                                        tint = Color(0xFF38BDF8),
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text(
+                                        text = "Accueil Véhicule",
+                                        style = MaterialTheme.typography.titleMedium.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            fontSize = 16.sp
+                                        )
+                                    )
+                                    Text(
+                                        text = "Enregistrement rapide en 3 étapes",
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            color = Color.White.copy(alpha = 0.7f),
+                                            fontSize = 11.sp
+                                        )
+                                    )
+                                }
+                            }
+
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = Color.White.copy(alpha = 0.12f)
+                            ) {
+                                Text(
+                                    text = "Guichet Express",
+                                    color = Color(0xFFBAE6FD),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
                             }
                         }
 
                         Spacer(modifier = Modifier.height(14.dp))
 
                         // Large CTA button
-                        Button(
+                        Surface(
                             onClick = { viewModel.startNewOrder() },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = BlueAccent,
-                                contentColor = Color.White
-                            ),
-                            shape = RoundedCornerShape(14.dp),
-                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            shadowElevation = 4.dp,
+                            border = BorderStroke(1.dp, Color(0xFF60A5FA).copy(alpha = 0.5f)),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(52.dp)
                                 .testTag("home_new_order_button")
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(22.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Nouvelle prestation",
-                                fontWeight = FontWeight.ExtraBold,
-                                color = Color.White,
-                                fontSize = 16.sp,
-                                letterSpacing = 0.2.sp
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        Brush.horizontalGradient(
+                                            colors = listOf(
+                                                Color(0xFF2563EB),
+                                                Color(0xFF0284C7)
+                                            )
+                                        )
+                                    )
+                                    .padding(horizontal = 16.dp, vertical = 14.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(38.dp)
+                                                .clip(CircleShape)
+                                                .background(Color.White.copy(alpha = 0.22f)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Add,
+                                                contentDescription = null,
+                                                tint = Color.White,
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        Column {
+                                            Text(
+                                                text = "Nouvelle prestation",
+                                                fontWeight = FontWeight.ExtraBold,
+                                                color = Color.White,
+                                                fontSize = 16.sp,
+                                                letterSpacing = 0.2.sp
+                                            )
+                                            Text(
+                                                text = "Plaque, client & services",
+                                                color = Color.White.copy(alpha = 0.85f),
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
+                                    }
+
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
                         }
 
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                        // Quick secondary shortcuts
+                        // Quick secondary shortcuts with enhanced tactile design
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             Surface(
-                                shape = RoundedCornerShape(10.dp),
+                                shape = RoundedCornerShape(12.dp),
                                 color = Color(0xFF1E293B),
                                 border = BorderStroke(1.dp, Color(0xFF334155)),
                                 modifier = Modifier
@@ -222,7 +347,7 @@ fun HomeScreen(
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.Center,
-                                    modifier = Modifier.padding(vertical = 8.dp)
+                                    modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.FormatListBulleted,
@@ -232,7 +357,7 @@ fun HomeScreen(
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = "File (${queueOrders.size})",
+                                        text = "File active (${queueOrders.size})",
                                         color = Color.White,
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold
@@ -241,7 +366,7 @@ fun HomeScreen(
                             }
 
                             Surface(
-                                shape = RoundedCornerShape(10.dp),
+                                shape = RoundedCornerShape(12.dp),
                                 color = Color(0xFF1E293B),
                                 border = BorderStroke(1.dp, Color(0xFF334155)),
                                 modifier = Modifier
@@ -251,7 +376,7 @@ fun HomeScreen(
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.Center,
-                                    modifier = Modifier.padding(vertical = 8.dp)
+                                    modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.PointOfSale,
@@ -334,16 +459,16 @@ fun HomeScreen(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "File d'attente",
+                        text = "File d'attente atelier",
                         style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.ExtraBold,
                             color = Navy900,
                             fontSize = 17.sp
                         )
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Surface(
-                        color = Navy900,
+                        color = if (queueOrders.isNotEmpty()) Navy900 else Color(0xFF94A3B8),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
@@ -358,7 +483,7 @@ fun HomeScreen(
 
                 if (queueOrders.isNotEmpty()) {
                     TextButton(onClick = { viewModel.openPlusScreen(PlusScreen.QUEUE) }) {
-                        Text("Tout voir", color = BlueAccent, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                        Text("Tout voir", color = BlueAccent, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
                 }
             }
@@ -368,7 +493,7 @@ fun HomeScreen(
             item {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = Color.White),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(16.dp),
                     border = BorderStroke(1.dp, BorderLight),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -400,9 +525,9 @@ fun HomeScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Activité récente",
+                    text = "Derniers lavages terminés",
                     style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.ExtraBold,
                         color = Navy900,
                         fontSize = 17.sp
                     )
@@ -415,7 +540,7 @@ fun HomeScreen(
             item {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = Color.White),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(16.dp),
                     border = BorderStroke(1.dp, BorderLight),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -452,32 +577,35 @@ fun QueueOrderCard(
     onPrint: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isPending = order.status == OrderStatus.PENDING.name
+    val accentColor = if (isPending) Color(0xFFF59E0B) else Color(0xFF0284C7)
+
     Card(
         modifier = modifier
             .fillMaxWidth()
             .testTag("queue_card_${order.id}"),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(1.dp, BorderLight),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             // Top: Vehicle & Status
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = order.vehicleModel,
                         style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.ExtraBold,
                             color = Navy900,
                             fontSize = 16.sp
                         )
                     )
-                    Spacer(modifier = Modifier.height(3.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -486,7 +614,8 @@ fun QueueOrderCard(
                         Text(
                             text = "• ${order.customerName}",
                             fontSize = 12.sp,
-                            color = TextSecondary,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF475569),
                             maxLines = 1
                         )
                     }
@@ -495,7 +624,9 @@ fun QueueOrderCard(
                 StatusChip(status = order.status)
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
+            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF1F5F9)))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Service & Price
             Row(
@@ -503,16 +634,33 @@ fun QueueOrderCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = order.servicesSummary,
-                    style = MaterialTheme.typography.bodySmall.copy(color = TextSecondary),
-                    modifier = Modifier.weight(1f)
-                )
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(accentColor)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = order.servicesSummary,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = Color(0xFF475569),
+                            fontWeight = FontWeight.Medium
+                        ),
+                        maxLines = 1
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = String.format(Locale.US, "%.2f %s", order.finalAmount, currency),
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = Navy900
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Black,
+                        color = Navy900,
+                        fontSize = 16.sp
                     )
                 )
             }
@@ -522,42 +670,60 @@ fun QueueOrderCard(
             // Fast One-Tap Action Button
             when (order.status) {
                 OrderStatus.PENDING.name -> {
-                    Button(
+                    Surface(
                         onClick = onStart,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF0284C7),
-                            contentColor = Color.White
-                        ),
-                        shape = RoundedCornerShape(10.dp),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        shadowElevation = 2.dp,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(44.dp)
+                            .height(46.dp)
                             .testTag("action_start_${order.id}")
                     ) {
-                        Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Démarrer le lavage", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.horizontalGradient(
+                                        listOf(Color(0xFF0284C7), Color(0xFF0369A1))
+                                    )
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Démarrer le lavage", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
+                            }
+                        }
                     }
                 }
 
                 OrderStatus.IN_PROGRESS.name -> {
-                    Button(
+                    Surface(
                         onClick = onFinish,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF059669),
-                            contentColor = Color.White
-                        ),
-                        shape = RoundedCornerShape(10.dp),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        shadowElevation = 2.dp,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(44.dp)
+                            .height(46.dp)
                             .testTag("action_finish_${order.id}")
                     ) {
-                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Terminer le lavage", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.horizontalGradient(
+                                        listOf(Color(0xFF10B981), Color(0xFF059669))
+                                    )
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Terminer le lavage", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
+                            }
+                        }
                     }
                 }
 
@@ -573,14 +739,14 @@ fun QueueOrderCard(
                                     containerColor = Color(0xFF0F172A),
                                     contentColor = Color.White
                                 ),
-                                shape = RoundedCornerShape(10.dp),
+                                shape = RoundedCornerShape(12.dp),
                                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(44.dp)
                                     .testTag("action_pay_${order.id}")
                             ) {
-                                Text("Encaisser", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
+                                Text("Encaisser", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 13.sp)
                             }
                         }
                         OutlinedButton(
@@ -590,12 +756,12 @@ fun QueueOrderCard(
                                 contentColor = Color(0xFF0F172A)
                             ),
                             border = BorderStroke(1.5.dp, Color(0xFF0F172A)),
-                            shape = RoundedCornerShape(10.dp),
+                            shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.height(44.dp)
                         ) {
                             Icon(Icons.Default.Print, contentDescription = null, tint = Color(0xFF0F172A), modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Ticket", fontWeight = FontWeight.ExtraBold, color = Color(0xFF0F172A), fontSize = 14.sp)
+                            Text("Ticket", fontWeight = FontWeight.Bold, color = Color(0xFF0F172A), fontSize = 13.sp)
                         }
                     }
                 }
@@ -619,13 +785,14 @@ fun RecentActivityCard(
             .fillMaxWidth()
             .testTag("recent_order_${order.id}"),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, BorderLight)
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -639,11 +806,11 @@ fun RecentActivityCard(
                         text = order.vehicleModel,
                         fontWeight = FontWeight.Bold,
                         color = Navy900,
-                        fontSize = 13.sp,
+                        fontSize = 14.sp,
                         maxLines = 1
                     )
                     Spacer(modifier = Modifier.weight(1f))
-                    Text(text = timeStr, fontSize = 11.sp, color = TextMuted)
+                    Text(text = timeStr, fontSize = 11.sp, color = TextMuted, fontWeight = FontWeight.Medium)
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
@@ -652,37 +819,46 @@ fun RecentActivityCard(
                     color = TextSecondary,
                     maxLines = 1
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     StatusChip(status = order.paymentStatus)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = String.format(Locale.US, "%.2f %s", order.finalAmount, currency),
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.ExtraBold,
                         color = Navy900,
-                        fontSize = 13.sp
+                        fontSize = 14.sp
                     )
                 }
             }
 
-            Row {
+            Spacer(modifier = Modifier.width(10.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 if (order.paidAmount < order.finalAmount) {
-                    OutlinedButton(
+                    Button(
                         onClick = onPay,
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = Color.White,
-                            contentColor = BlueAccent
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF0F172A),
+                            contentColor = Color.White
                         ),
-                        border = BorderStroke(1.5.dp, BlueAccent),
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                         modifier = Modifier.height(36.dp)
                     ) {
-                        Text("Payer", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = BlueAccent)
+                        Text("Payer", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                 }
-                IconButton(onClick = onPrint, modifier = Modifier.size(36.dp)) {
-                    Icon(Icons.Default.Print, contentDescription = "Imprimer", tint = Navy900)
+                Surface(
+                    onClick = onPrint,
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color(0xFFF1F5F9),
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Print, contentDescription = "Imprimer", tint = Navy900, modifier = Modifier.size(18.dp))
+                    }
                 }
             }
         }

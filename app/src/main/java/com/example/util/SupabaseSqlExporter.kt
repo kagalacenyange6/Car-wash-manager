@@ -10,12 +10,13 @@ object SupabaseSqlExporter {
 -- Compatible Supabase PostgREST REST API
 -- ==========================================================
 
--- Activer l'extension UUID
+-- Activer les extensions UUID
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- 1. COMPANIES (Paramètres de l'entreprise)
 CREATE TABLE IF NOT EXISTS public.companies (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL DEFAULT 'Flash Auto Wash',
     phone VARCHAR(50),
     address TEXT,
@@ -34,7 +35,7 @@ CREATE TABLE IF NOT EXISTS public.companies (
 
 -- 2. EMPLOYEES & LAVEURS
 CREATE TABLE IF NOT EXISTS public.employees (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     company_id UUID REFERENCES public.companies(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     phone VARCHAR(50) NOT NULL,
@@ -48,7 +49,7 @@ CREATE TABLE IF NOT EXISTS public.employees (
 
 -- 3. CUSTOMERS (Clients)
 CREATE TABLE IF NOT EXISTS public.customers (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     company_id UUID REFERENCES public.companies(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     phone VARCHAR(50) NOT NULL,
@@ -60,7 +61,7 @@ CREATE TABLE IF NOT EXISTS public.customers (
 
 -- 4. VEHICLES (Véhicules)
 CREATE TABLE IF NOT EXISTS public.vehicles (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     company_id UUID REFERENCES public.companies(id) ON DELETE CASCADE,
     customer_id UUID REFERENCES public.customers(id) ON DELETE CASCADE,
     plate VARCHAR(50) NOT NULL,
@@ -76,7 +77,7 @@ CREATE TABLE IF NOT EXISTS public.vehicles (
 
 -- 5. SERVICES (Tarification)
 CREATE TABLE IF NOT EXISTS public.services (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     company_id UUID REFERENCES public.companies(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     price NUMERIC(12, 2) NOT NULL,
@@ -89,7 +90,7 @@ CREATE TABLE IF NOT EXISTS public.services (
 
 -- 6. WASH ORDERS (Prestations / Commandes)
 CREATE TABLE IF NOT EXISTS public.wash_orders (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     company_id UUID REFERENCES public.companies(id) ON DELETE CASCADE,
     order_number VARCHAR(50) NOT NULL,
     customer_id UUID REFERENCES public.customers(id) ON DELETE SET NULL,
@@ -115,7 +116,7 @@ CREATE TABLE IF NOT EXISTS public.wash_orders (
 
 -- 7. WASH ORDER ITEMS (Lignes de prestations)
 CREATE TABLE IF NOT EXISTS public.wash_order_items (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id UUID REFERENCES public.wash_orders(id) ON DELETE CASCADE,
     service_id UUID REFERENCES public.services(id) ON DELETE SET NULL,
     service_name VARCHAR(255) NOT NULL,
@@ -125,7 +126,7 @@ CREATE TABLE IF NOT EXISTS public.wash_order_items (
 
 -- 8. PAYMENTS (Règlements & Paiements)
 CREATE TABLE IF NOT EXISTS public.payments (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     company_id UUID REFERENCES public.companies(id) ON DELETE CASCADE,
     order_id UUID REFERENCES public.wash_orders(id) ON DELETE CASCADE,
     order_number VARCHAR(50) NOT NULL,
@@ -140,7 +141,7 @@ CREATE TABLE IF NOT EXISTS public.payments (
 
 -- 9. EXPENSES (Dépenses / Charges)
 CREATE TABLE IF NOT EXISTS public.expenses (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     company_id UUID REFERENCES public.companies(id) ON DELETE CASCADE,
     category VARCHAR(100) NOT NULL,
     amount NUMERIC(12, 2) NOT NULL,
@@ -152,7 +153,7 @@ CREATE TABLE IF NOT EXISTS public.expenses (
 
 -- 10. PRODUCTS & STOCK (Articles & Mouvements)
 CREATE TABLE IF NOT EXISTS public.products (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     company_id UUID REFERENCES public.companies(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     current_stock NUMERIC(12, 2) DEFAULT 0,
@@ -164,7 +165,7 @@ CREATE TABLE IF NOT EXISTS public.products (
 );
 
 CREATE TABLE IF NOT EXISTS public.stock_movements (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     company_id UUID REFERENCES public.companies(id) ON DELETE CASCADE,
     product_id UUID REFERENCES public.products(id) ON DELETE CASCADE,
     product_name VARCHAR(255) NOT NULL,
@@ -177,7 +178,7 @@ CREATE TABLE IF NOT EXISTS public.stock_movements (
 
 -- 11. LOYALTY (Programme de fidélité)
 CREATE TABLE IF NOT EXISTS public.loyalty_accounts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     company_id UUID REFERENCES public.companies(id) ON DELETE CASCADE,
     customer_id UUID REFERENCES public.customers(id) ON DELETE CASCADE,
     points INT DEFAULT 0,
@@ -188,7 +189,7 @@ CREATE TABLE IF NOT EXISTS public.loyalty_accounts (
 
 -- 12. NOTIFICATIONS & AUDIT LOGS
 CREATE TABLE IF NOT EXISTS public.notifications (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     company_id UUID REFERENCES public.companies(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     message TEXT NOT NULL,
@@ -198,7 +199,7 @@ CREATE TABLE IF NOT EXISTS public.notifications (
 );
 
 CREATE TABLE IF NOT EXISTS public.audit_logs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     company_id UUID REFERENCES public.companies(id) ON DELETE CASCADE,
     user_name VARCHAR(255) NOT NULL,
     user_role VARCHAR(50) NOT NULL,

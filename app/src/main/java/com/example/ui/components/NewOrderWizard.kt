@@ -52,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -879,7 +880,7 @@ private fun Step3ChooseServices(
 }
 
 // -------------------------------------------------------------
-// ÉTAPE 4 : CONFIRMATION
+// ÉTAPE 4 : CONFIRMATION & VALIDATION
 // -------------------------------------------------------------
 @Composable
 private fun Step4Confirm(
@@ -895,7 +896,116 @@ private fun Step4Confirm(
     val subtotal = services.sumOf { it.price }
     val total = (subtotal - discount).coerceAtLeast(0.0)
 
-    Column {
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        // En-tête de récapitulatif
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = Color(0xFFF1F5F9),
+            border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFE0F2FE)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.DirectionsCar,
+                        contentDescription = null,
+                        tint = Color(0xFF0284C7),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text(
+                        text = "Récapitulatif de la commande",
+                        fontWeight = FontWeight.Bold,
+                        color = Navy900,
+                        fontSize = 14.sp
+                    )
+                    Text(
+                        text = "Vérifiez les informations avant envoi à l'atelier",
+                        color = Color(0xFF64748B),
+                        fontSize = 11.sp
+                    )
+                }
+            }
+        }
+
+        // Fiche Client & Véhicule
+        Card(
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, BorderLight),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                // Client
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(30.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFF1F5F9)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Person, contentDescription = null, tint = Color(0xFF475569), modifier = Modifier.size(16.dp))
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text(customer?.name ?: "Client standard", fontWeight = FontWeight.Bold, color = Navy900, fontSize = 13.sp)
+                            if (!customer?.phone.isNullOrBlank()) {
+                                Text(customer?.phone ?: "", color = Color(0xFF64748B), fontSize = 11.sp)
+                            }
+                        }
+                    }
+                    Text(
+                        text = "Client enregistré",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF0284C7)
+                    )
+                }
+
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF1F5F9)))
+
+                // Véhicule & Plaque
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "${vehicle?.brand ?: ""} ${vehicle?.model ?: ""}".trim().ifEmpty { "Véhicule" },
+                            fontWeight = FontWeight.Bold,
+                            color = Navy900,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = "Catégorie : ${vehicle?.vehicleType ?: "Berline"}",
+                            color = Color(0xFF64748B),
+                            fontSize = 11.sp
+                        )
+                    }
+                    PlateBadge(plate = vehicle?.plate ?: "KN-0000-AA")
+                }
+            }
+        }
+
+        // Fiche Prestations & Tarifs
         Card(
             colors = CardDefaults.cardColors(containerColor = Color.White),
             shape = RoundedCornerShape(16.dp),
@@ -903,66 +1013,103 @@ private fun Step4Confirm(
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "Récapitulatif de la prestation",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = Navy900)
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Client :", color = TextSecondary, fontSize = 13.sp)
-                    Text(customer?.name ?: "-", fontWeight = FontWeight.Bold, color = TextPrimary, fontSize = 13.sp)
-                }
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Téléphone :", color = TextSecondary, fontSize = 13.sp)
-                    Text(customer?.phone ?: "-", color = TextPrimary, fontSize = 13.sp)
-                }
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Véhicule :", color = TextSecondary, fontSize = 13.sp)
-                    Text("${vehicle?.brand} ${vehicle?.model}", fontWeight = FontWeight.Bold, color = TextPrimary, fontSize = 13.sp)
-                }
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text("Plaque :", color = TextSecondary, fontSize = 13.sp)
-                    PlateBadge(plate = vehicle?.plate ?: "-")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Prestations sélectionnées", fontWeight = FontWeight.Bold, color = Navy900, fontSize = 13.sp)
+                    Surface(
+                        color = Color(0xFFE0F2FE),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = "${services.size} service(s)",
+                            color = Color(0xFF0284C7),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
-                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(BorderLight))
-                Spacer(modifier = Modifier.height(10.dp))
 
-                Text("Services choisis :", fontWeight = FontWeight.SemiBold, color = Navy900, fontSize = 13.sp)
-                Spacer(modifier = Modifier.height(4.dp))
                 services.forEach { s ->
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("• ${s.name}", fontSize = 12.sp, color = TextPrimary)
-                        Text(String.format(Locale.US, "%.2f %s", s.price, currency), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF0284C7))
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(s.name, fontSize = 13.sp, color = Navy900, fontWeight = FontWeight.Medium)
+                        }
+                        Text(
+                            text = String.format(Locale.US, "%.2f %s", s.price, currency),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Navy900
+                        )
+                    }
+                }
+
+                if (discount > 0.0) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Remise fidélité :", fontSize = 12.sp, color = Color(0xFF059669))
+                        Text(
+                            text = String.format(Locale.US, "-%.2f %s", discount, currency),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF059669)
+                        )
                     }
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
-                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(BorderLight))
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF1F5F9)))
                 Spacer(modifier = Modifier.height(12.dp))
 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("TOTAL FINAL :", fontWeight = FontWeight.Bold, color = Navy900, fontSize = 16.sp)
-                    Text(
-                        text = String.format(Locale.US, "%.2f %s", total, currency),
-                        fontWeight = FontWeight.Bold,
-                        color = StatusCompleted,
-                        fontSize = 20.sp
-                    )
+                // Total Final High-Contrast
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text("TOTAL À ENCAISSER", fontWeight = FontWeight.Bold, color = Color(0xFF64748B), fontSize = 11.sp, letterSpacing = 0.5.sp)
+                        Text("TTC / Net", fontSize = 10.sp, color = Color(0xFF94A3B8))
+                    }
+                    Surface(
+                        color = Color(0xFFECFDF5),
+                        border = BorderStroke(1.dp, Color(0xFFA7F3D0)),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text(
+                            text = String.format(Locale.US, "%.2f %s", total, currency),
+                            fontWeight = FontWeight.Black,
+                            color = Color(0xFF065F46),
+                            fontSize = 20.sp,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        )
+                    }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
+        // Instructions spéciales
         OutlinedTextField(
             value = notes,
             onValueChange = onNotesChange,
@@ -980,13 +1127,93 @@ private fun Step4Confirm(
             shape = RoundedCornerShape(12.dp)
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
-        CarWashPrimaryButton(
-            text = "Créer la prestation et mettre en file",
-            icon = Icons.Default.Check,
+        // =========================================================
+        // BOUTON DE VALIDATION HAUTE PERFORMANCE & DESIGN MODERNE
+        // =========================================================
+        Surface(
             onClick = onConfirm,
-            modifier = Modifier.testTag("confirm_create_order_button")
-        )
+            shape = RoundedCornerShape(16.dp),
+            shadowElevation = 6.dp,
+            border = BorderStroke(1.dp, Color(0xFF38BDF8).copy(alpha = 0.5f)),
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("confirm_create_order_button")
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(
+                                Color(0xFF0B192C),
+                                Color(0xFF1E3A8A),
+                                Color(0xFF0284C7)
+                            )
+                        )
+                    )
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        // Badge Icône Valider avec éclat
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color.White.copy(alpha = 0.18f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "Valider la prestation",
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color.White,
+                                fontSize = 15.sp,
+                                letterSpacing = 0.2.sp
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Mettre en file d'attente atelier",
+                                color = Color(0xFFBAE6FD),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+
+                    // Badge dynamique du prix
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = Color.White.copy(alpha = 0.22f),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f))
+                    ) {
+                        Text(
+                            text = String.format(Locale.US, "%.2f %s", total, currency),
+                            fontWeight = FontWeight.Black,
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                        )
+                    }
+                }
+            }
+        }
     }
 }

@@ -23,6 +23,8 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import java.time.Instant
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 enum class SyncState {
@@ -180,6 +182,8 @@ class SupabaseSyncManager(
                     "La table '$table' n'existe pas encore sur votre base Supabase. Cliquez sur 'Copier le script SQL' et exécutez-le dans Supabase > SQL Editor."
                 responseBody.contains("row-level security") || responseBody.contains("violates row-level") ->
                     "Sécurité RLS active sur '$table'. Exécutez le script SQL qui applique 'ALTER TABLE $table DISABLE ROW LEVEL SECURITY;'."
+                responseBody.contains("22008") || responseBody.contains("date/time") ->
+                    "Erreur de conversion de date sur '$table' (22008). Les dates ont été converties au standard ISO-8601."
                 else ->
                     "HTTP $responseCode: ${responseBody.take(150)}"
             }
@@ -306,17 +310,45 @@ class SupabaseSyncManager(
             }
         }
 
+    // Helper: Normalize string IDs into valid UUIDs so PostgreSQL accepts them whether column is UUID or TEXT
+    private fun toSupabaseId(id: String): String {
+        if (id.isBlank()) return ""
+        val trimmed = id.trim()
+        val uuidRegex = Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+        return if (uuidRegex.matches(trimmed)) {
+            trimmed.lowercase()
+        } else {
+            // Deterministically hash string IDs like "cust-1" to valid RFC-4122 UUIDs
+            UUID.nameUUIDFromBytes(trimmed.toByteArray(Charsets.UTF_8)).toString()
+        }
+    }
+
+    // Helper: Format epoch milliseconds or seconds into ISO-8601 UTC string (required by PostgreSQL TIMESTAMPTZ)
+    // Fixes PostgreSQL error 22008 (date/time field value out of range: "1791888091")
+    private fun formatTimestampToIso(epoch: Long): String {
+        return try {
+            val millis = when {
+                epoch in 1L..99_999_999_999L -> epoch * 1000L // epoch was in seconds (10 digits)
+                epoch > 99_999_999_999L -> epoch // epoch was in millis (13 digits)
+                else -> System.currentTimeMillis()
+            }
+            Instant.ofEpochMilli(millis).toString() // e.g. "2026-10-12T10:30:00Z"
+        } catch (e: Exception) {
+            Instant.now().toString()
+        }
+    }
+
     // JSON serialisation helpers
     private fun customersToJson(customers: List<Customer>): JSONArray {
         val array = JSONArray()
         customers.forEach { c ->
             val obj = JSONObject().apply {
-                put("id", c.id)
+                put("id", toSupabaseId(c.id))
                 put("name", c.name)
                 put("phone", c.phone)
                 put("address", c.address)
                 put("notes", c.notes)
-                put("created_at", c.createdAt)
+                put("created_at", formatTimestampToIso(c.createdAt))
             }
             array.put(obj)
         }
@@ -327,15 +359,17 @@ class SupabaseSyncManager(
         val array = JSONArray()
         vehicles.forEach { v ->
             val obj = JSONObject().apply {
-                put("id", v.id)
-                put("customer_id", v.customerId)
+                put("id", toSupabaseId(v.id))
+                if (v.customerId.isNotBlank()) {
+                    put("customer_id", toSupabaseId(v.customerId))
+                }
                 put("plate", v.plate)
                 put("brand", v.brand)
                 put("model", v.model)
                 put("color", v.color)
                 put("vehicle_type", v.vehicleType)
                 put("notes", v.notes)
-                put("created_at", v.createdAt)
+                put("created_at", formatTimestampToIso(v.createdAt))
             }
             array.put(obj)
         }
@@ -346,8 +380,7 @@ class SupabaseSyncManager(
         val array = JSONArray()
         services.forEach { s ->
             val obj = JSONObject().apply {
-                put("id", s.id)
-                put("company_id", s.companyId)
+                put("id", toSupabaseId(s.id))
                 put("name", s.name)
                 put("price", s.price)
                 put("duration_minutes", s.durationMinutes)
@@ -363,13 +396,16 @@ class SupabaseSyncManager(
         val array = JSONArray()
         orders.forEach { o ->
             val obj = JSONObject().apply {
-                put("id", o.id)
-                put("company_id", o.companyId)
+                put("id", toSupabaseId(o.id))
                 put("order_number", o.orderNumber)
-                put("customer_id", o.customerId)
+                if (o.customerId.isNotBlank()) {
+                    put("customer_id", toSupabaseId(o.customerId))
+                }
                 put("customer_name", o.customerName)
                 put("customer_phone", o.customerPhone)
-                put("vehicle_id", o.vehicleId)
+                if (o.vehicleId.isNotBlank()) {
+                    put("vehicle_id", toSupabaseId(o.vehicleId))
+                }
                 put("vehicle_plate", o.vehiclePlate)
                 put("vehicle_model", o.vehicleModel)
                 put("status", o.status)
@@ -379,7 +415,7 @@ class SupabaseSyncManager(
                 put("final_amount", o.finalAmount)
                 put("paid_amount", o.paidAmount)
                 put("services_summary", o.servicesSummary)
-                put("created_at", o.createdAt)
+                put("created_at", formatTimestampToIso(o.createdAt))
             }
             array.put(obj)
         }
@@ -390,9 +426,10 @@ class SupabaseSyncManager(
         val array = JSONArray()
         payments.forEach { p ->
             val obj = JSONObject().apply {
-                put("id", p.id)
-                put("company_id", p.companyId)
-                put("order_id", p.orderId)
+                put("id", toSupabaseId(p.id))
+                if (p.orderId.isNotBlank()) {
+                    put("order_id", toSupabaseId(p.orderId))
+                }
                 put("order_number", p.orderNumber)
                 put("customer_name", p.customerName)
                 put("vehicle_plate", p.vehiclePlate)
@@ -400,7 +437,7 @@ class SupabaseSyncManager(
                 put("payment_method", p.paymentMethod)
                 put("reference", p.reference)
                 put("employee_name", p.employeeName)
-                put("created_at", p.createdAt)
+                put("created_at", formatTimestampToIso(p.createdAt))
             }
             array.put(obj)
         }
@@ -411,11 +448,12 @@ class SupabaseSyncManager(
         val array = JSONArray()
         expenses.forEach { e ->
             val obj = JSONObject().apply {
-                put("id", e.id)
+                put("id", toSupabaseId(e.id))
                 put("description", e.description)
                 put("amount", e.amount)
                 put("category", e.category)
-                put("created_at", e.date)
+                put("date", formatTimestampToIso(e.date))
+                put("created_at", formatTimestampToIso(e.date))
             }
             array.put(obj)
         }

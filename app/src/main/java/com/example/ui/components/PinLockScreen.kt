@@ -83,13 +83,9 @@ fun PinLockScreen(
             if (next.length == 4) {
                 // Find matching employee by entered PIN code directly
                 val matched = employees.firstOrNull { emp ->
-                    val effectivePin = emp.pinCode.ifBlank {
-                        if (emp.role.equals("ADMIN", ignoreCase = true)) "0000" else ""
-                    }
-                    effectivePin == next
-                } ?: if (next == "0000") {
-                    employees.firstOrNull { it.role.equals("ADMIN", ignoreCase = true) } ?: employees.firstOrNull()
-                } else null
+                    val effectivePin = emp.pinCode.trim()
+                    effectivePin.isNotEmpty() && effectivePin == next
+                }
 
                 if (matched != null) {
                     onUnlocked(matched)
