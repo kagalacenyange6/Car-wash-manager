@@ -208,43 +208,31 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
 );
 
 -- ==========================================================
--- SÉCURITÉ POSTGREST & AUTORISATIONS
--- Permet la synchronisation immédiate avec la clé anon publique
+-- SÉCURITÉ & PERMISSIONS (ACCÈS COMPLET POUR LA CLÉ ANON)
+-- Désactive RLS sur toutes les tables pour permettre les écritures (INSERT/UPDATE/DELETE)
+-- par l'application sans rejet de sécurité 42501
 -- ==========================================================
-GRANT USAGE ON SCHEMA public TO anon, authenticated;
-GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
 
-ALTER TABLE public.companies ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.employees ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.vehicles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.services ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.wash_orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.wash_order_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.stock_movements ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.loyalty_accounts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
-
--- Politiques RLS permissives pour la clé API de synchronisation
-CREATE POLICY "Allow all operations for anon and authenticated" ON public.companies FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all operations for anon and authenticated" ON public.employees FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all operations for anon and authenticated" ON public.customers FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all operations for anon and authenticated" ON public.vehicles FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all operations for anon and authenticated" ON public.services FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all operations for anon and authenticated" ON public.wash_orders FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all operations for anon and authenticated" ON public.wash_order_items FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all operations for anon and authenticated" ON public.payments FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all operations for anon and authenticated" ON public.expenses FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all operations for anon and authenticated" ON public.products FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all operations for anon and authenticated" ON public.stock_movements FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all operations for anon and authenticated" ON public.loyalty_accounts FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all operations for anon and authenticated" ON public.notifications FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all operations for anon and authenticated" ON public.audit_logs FOR ALL USING (true) WITH CHECK (true);
+-- Désactivation explicite du RLS pour autoriser la synchronisation
+ALTER TABLE public.companies DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.employees DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.customers DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vehicles DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.services DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.wash_orders DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.wash_order_items DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payments DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.expenses DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.products DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.stock_movements DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.loyalty_accounts DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notifications DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.audit_logs DISABLE ROW LEVEL SECURITY;
         """.trimIndent()
     }
 }

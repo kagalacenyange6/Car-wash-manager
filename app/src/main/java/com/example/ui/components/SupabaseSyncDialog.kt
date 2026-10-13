@@ -229,18 +229,21 @@ fun SupabaseSyncDialog(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "Dernier état :",
-                                color = Color.White.copy(alpha = 0.7f),
-                                fontSize = 12.sp
-                            )
-                            Text(
-                                text = "$formattedTime • $syncMessage",
-                                color = Color.White,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                maxLines = 1
-                            )
+                            Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
+                                Text(
+                                    text = formattedTime,
+                                    color = Color.White.copy(alpha = 0.8f),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = syncMessage,
+                                    color = if (syncState == SyncState.ERROR) Color(0xFFFECACA) else Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (syncState == SyncState.ERROR) FontWeight.Bold else FontWeight.Normal,
+                                    lineHeight = 16.sp
+                                )
+                            }
                         }
                     }
 

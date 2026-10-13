@@ -69,11 +69,17 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Notes
 import com.example.data.model.Customer
 import com.example.data.model.Vehicle
 import com.example.data.model.WashOrder
 import com.example.ui.CarWashViewModel
+import com.example.ui.components.CarWashInputField
+import com.example.ui.components.CarWashPrimaryButton
 import com.example.ui.components.EmptyStateView
+import com.example.ui.components.FormErrorBanner
+import com.example.ui.components.FormSheetHeader
 import com.example.ui.components.carWashInputTextStyle
 import com.example.ui.components.carWashTextFieldColors
 import com.example.ui.theme.BlueAccent
@@ -486,115 +492,80 @@ fun AddCustomerSheet(
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 32.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Nouveau Client",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = Navy900)
-                )
-                IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = "Fermer")
-                }
-            }
+            FormSheetHeader(
+                title = "Nouveau Client",
+                subtitle = "Enregistrez le client pour son historique, ses véhicules et sa fidélité",
+                icon = Icons.Default.Person,
+                onDismiss = onDismiss
+            )
 
             Spacer(modifier = Modifier.height(14.dp))
 
             if (errorMessage != null) {
-                Surface(
-                    color = Color(0xFFFEE2E2),
-                    shape = RoundedCornerShape(8.dp),
-                    border = BorderStroke(1.dp, Color(0xFFEF4444)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = errorMessage!!,
-                        color = Color(0xFFB91C1C),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(10.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.height(10.dp))
+                FormErrorBanner(message = errorMessage!!)
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
-            OutlinedTextField(
+            CarWashInputField(
                 value = name,
                 onValueChange = {
                     name = it
                     errorMessage = null
                 },
-                label = { Text("Nom complet *", fontWeight = FontWeight.SemiBold) },
-                textStyle = carWashInputTextStyle,
-                colors = carWashTextFieldColors(),
-                modifier = Modifier.fillMaxWidth().testTag("add_customer_name"),
-                singleLine = true,
+                label = "Nom complet *",
+                placeholder = "ex: Jean-Marc Mukendi",
+                leadingIcon = Icons.Default.Person,
                 isError = errorMessage != null && name.isBlank(),
-                shape = RoundedCornerShape(12.dp)
+                supportingText = if (errorMessage != null && name.isBlank()) "Le nom est obligatoire" else null,
+                testTag = "add_customer_name"
             )
-            Spacer(modifier = Modifier.height(8.dp))
 
-            OutlinedTextField(
+            Spacer(modifier = Modifier.height(10.dp))
+
+            CarWashInputField(
                 value = phone,
                 onValueChange = {
                     phone = it
                     errorMessage = null
                 },
-                label = { Text("Téléphone (optionnel)", fontWeight = FontWeight.SemiBold) },
-                placeholder = { Text("ex: 06 12 34 56 78", color = Color(0xFF94A3B8)) },
-                textStyle = carWashInputTextStyle,
-                colors = carWashTextFieldColors(),
-                modifier = Modifier.fillMaxWidth().testTag("add_customer_phone"),
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                label = "Numéro de téléphone",
+                placeholder = "ex: +243 81 234 5678",
+                leadingIcon = Icons.Default.Phone,
+                testTag = "add_customer_phone"
             )
-            Spacer(modifier = Modifier.height(8.dp))
 
-            OutlinedTextField(
+            Spacer(modifier = Modifier.height(10.dp))
+
+            CarWashInputField(
                 value = address,
                 onValueChange = { address = it },
-                label = { Text("Adresse / Quartier (optionnel)", fontWeight = FontWeight.SemiBold) },
-                textStyle = carWashInputTextStyle,
-                colors = carWashTextFieldColors(),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                label = "Adresse / Commune / Quartier",
+                placeholder = "ex: Gombe, Av. Justice",
+                leadingIcon = Icons.Default.LocationOn
             )
-            Spacer(modifier = Modifier.height(8.dp))
 
-            OutlinedTextField(
+            Spacer(modifier = Modifier.height(10.dp))
+
+            CarWashInputField(
                 value = notes,
                 onValueChange = { notes = it },
-                label = { Text("Notes (optionnel)", fontWeight = FontWeight.SemiBold) },
-                textStyle = carWashInputTextStyle,
-                colors = carWashTextFieldColors(),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                label = "Notes et préférences",
+                placeholder = "ex: Préfère le lavage mousse, client régulier",
+                leadingIcon = Icons.Default.Notes
             )
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            Button(
+            CarWashPrimaryButton(
+                text = "Enregistrer le client",
                 onClick = {
                     if (name.trim().isBlank()) {
                         errorMessage = "Veuillez entrer le nom du client"
-                        return@Button
+                        return@CarWashPrimaryButton
                     }
                     onSave(name.trim(), phone.trim().ifBlank { "-" }, address.trim(), notes.trim())
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Navy900,
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(12.dp),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
-                modifier = Modifier.fillMaxWidth().height(50.dp).testTag("save_customer_button")
-            ) {
-                Text("Enregistrer le client", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
-            }
+                }
+            )
         }
     }
 }

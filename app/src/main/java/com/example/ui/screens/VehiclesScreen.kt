@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -59,7 +60,13 @@ import androidx.compose.ui.unit.sp
 import com.example.data.model.Customer
 import com.example.data.model.Vehicle
 import com.example.ui.CarWashViewModel
+import com.example.ui.components.CarWashInputField
+import com.example.ui.components.CarWashPrimaryButton
 import com.example.ui.components.EmptyStateView
+import com.example.ui.components.FormErrorBanner
+import com.example.ui.components.FormOptionSelector
+import com.example.ui.components.FormSheetHeader
+import com.example.ui.components.PlateBadge
 import com.example.ui.components.carWashInputTextStyle
 import com.example.ui.components.carWashTextFieldColors
 import com.example.ui.theme.BlueAccent
@@ -230,20 +237,8 @@ fun VehicleCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Plaque d'immatriculation (TRÈS VISIBLE comme requis)
-                Surface(
-                    color = Color(0xFFFEF3C7),
-                    shape = RoundedCornerShape(6.dp),
-                    border = BorderStroke(1.dp, Color(0xFFFDE68A))
-                ) {
-                    Text(
-                        text = vehicle.plate,
-                        color = Color(0xFF92400E),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
+                // Plaque d'immatriculation officielle RDC
+                com.example.ui.components.PlateBadge(plate = vehicle.plate)
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(color = Color(0xFFF1F5F9), shape = RoundedCornerShape(6.dp)) {
@@ -334,139 +329,178 @@ fun AddVehicleSheet(
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 32.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Nouveau Véhicule",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, color = Navy900)
-                )
-                IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = "Fermer")
-                }
-            }
+            FormSheetHeader(
+                title = "Nouveau Véhicule",
+                subtitle = "Associez un véhicule à un client pour les prestations",
+                icon = Icons.Default.DirectionsCar,
+                onDismiss = onDismiss
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
 
             if (errorMessage != null) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Surface(
-                    color = Color(0xFFFFE4E6),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = errorMessage ?: "",
-                        color = Color(0xFFE11D48),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-                    )
-                }
+                FormErrorBanner(message = errorMessage!!)
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Choose customer dropdown/chips
-            Text("Attribuer au client * :", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Navy900)
+            // Choose customer section
+            Text(
+                text = "CLIENT PROPRIÉTAIRE *",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = TextMuted,
+                letterSpacing = 0.8.sp
+            )
             Spacer(modifier = Modifier.height(6.dp))
             if (customers.isEmpty()) {
-                Text("Aucun client existant. Créez d'abord un client.", fontSize = 12.sp, color = Color(0xFFE11D48))
+                Surface(
+                    color = Color(0xFFFFF1F2),
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, Color(0xFFFECDD3)),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                ) {
+                    Text(
+                        text = "Aucun client enregistré. Créez d'abord un client.",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFFE11D48),
+                        modifier = Modifier.padding(10.dp)
+                    )
+                }
             } else {
-                LazyColumn(modifier = Modifier.height(110.dp)) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(115.dp)
+                ) {
                     items(customers, key = { it.id }) { c ->
                         val isSel = c.id == selectedCustomerId
                         Surface(
-                            color = if (isSel) Color(0xFFE0F2FE) else Color.White,
-                            shape = RoundedCornerShape(8.dp),
-                            border = BorderStroke(1.dp, if (isSel) BlueAccent else BorderLight),
+                            color = if (isSel) Color(0xFFE0F2FE) else Color(0xFFF8FAFC),
+                            shape = RoundedCornerShape(10.dp),
+                            border = BorderStroke(1.2.dp, if (isSel) BlueAccent else Color(0xFFE2E8F0)),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 2.dp)
+                                .padding(vertical = 3.dp)
                                 .clickable { 
                                     selectedCustomerId = c.id 
                                     errorMessage = null
                                 }
                         ) {
-                            Text(
-                                text = "${c.name} (${c.phone})",
-                                fontSize = 12.sp,
-                                fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
-                                color = if (isSel) Navy900 else TextPrimary,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .clip(CircleShape)
+                                        .background(if (isSel) BlueAccent else Navy900.copy(alpha = 0.1f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = c.name.take(1).uppercase(),
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp,
+                                        color = if (isSel) Color.White else Navy900
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = c.name,
+                                        fontSize = 13.sp,
+                                        fontWeight = if (isSel) FontWeight.Bold else FontWeight.SemiBold,
+                                        color = if (isSel) Navy900 else TextPrimary
+                                    )
+                                    Text(
+                                        text = c.phone,
+                                        fontSize = 11.sp,
+                                        color = TextSecondary
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
+            CarWashInputField(
                 value = plate,
                 onValueChange = { 
                     plate = it.uppercase() 
                     errorMessage = null
                 },
-                label = { Text("Plaque d'immatriculation *", fontWeight = FontWeight.SemiBold) },
-                textStyle = carWashInputTextStyle,
-                colors = carWashTextFieldColors(),
-                modifier = Modifier.fillMaxWidth().testTag("add_vehicle_plate_input"),
-                singleLine = true,
+                label = "Plaque d'immatriculation *",
+                placeholder = "ex: 1024 AB",
+                leadingIcon = Icons.Default.DirectionsCar,
                 isError = errorMessage != null && plate.isBlank(),
-                shape = RoundedCornerShape(12.dp)
+                supportingText = if (errorMessage != null && plate.isBlank()) "La plaque d'immatriculation est obligatoire" else null,
+                testTag = "add_vehicle_plate_input"
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            Row(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                CarWashInputField(
                     value = brand,
                     onValueChange = { brand = it },
-                    label = { Text("Marque", fontWeight = FontWeight.SemiBold) },
-                    textStyle = carWashInputTextStyle,
-                    colors = carWashTextFieldColors(),
-                    modifier = Modifier.weight(1f),
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
+                    label = "Marque",
+                    placeholder = "ex: Toyota",
+                    modifier = Modifier.weight(1f)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                OutlinedTextField(
+                CarWashInputField(
                     value = model,
                     onValueChange = { model = it },
-                    label = { Text("Modèle", fontWeight = FontWeight.SemiBold) },
-                    textStyle = carWashInputTextStyle,
-                    colors = carWashTextFieldColors(),
-                    modifier = Modifier.weight(1f),
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
+                    label = "Modèle",
+                    placeholder = "ex: Hilux",
+                    modifier = Modifier.weight(1f)
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            Button(
+            Text(
+                text = "TYPE DE VÉHICULE",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = TextMuted,
+                letterSpacing = 0.8.sp
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            FormOptionSelector(
+                options = listOf(
+                    "Berline" to "Berline",
+                    "SUV" to "SUV",
+                    "Pick-up" to "Pick-up"
+                ),
+                selectedOption = vehicleType,
+                onOptionSelected = { vehicleType = it }
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            CarWashPrimaryButton(
+                text = "Enregistrer le véhicule",
                 onClick = {
                     if (selectedCustomerId.isBlank()) {
                         errorMessage = "Veuillez sélectionner un client"
-                        return@Button
+                        return@CarWashPrimaryButton
                     }
                     if (plate.trim().isBlank()) {
                         errorMessage = "Veuillez renseigner la plaque d'immatriculation"
-                        return@Button
+                        return@CarWashPrimaryButton
                     }
                     onSave(selectedCustomerId, plate.trim(), brand.trim().ifBlank { "Auto" }, model.trim().ifBlank { "Modèle" }, color, vehicleType, "")
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Navy900,
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(12.dp),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
-                modifier = Modifier.fillMaxWidth().height(50.dp).testTag("save_vehicle_button")
-            ) {
-                Text("Enregistrer le véhicule", fontWeight = FontWeight.ExtraBold, color = Color.White, fontSize = 15.sp)
-            }
+                }
+            )
         }
     }
 }

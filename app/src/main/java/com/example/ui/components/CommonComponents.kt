@@ -21,6 +21,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -28,6 +30,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -136,49 +139,68 @@ fun StatCard(
 }
 
 /**
- * Automotive License Plate Badge (European / Modern Style)
+ * Automotive License Plate Badge - Format officiel RDC (République Démocratique du Congo)
+ * Structure : [Bandeau drapeau RDC + CGO] [Numéro d'immatriculation (ex: 1024 AB)]
  */
 @Composable
 fun PlateBadge(
     plate: String,
     modifier: Modifier = Modifier
 ) {
+    // Nettoyer et formater la plaque pour l'affichage RDC
+    val cleanPlate = plate.uppercase().trim()
+
     Surface(
-        color = Color(0xFFFAFAFA),
+        color = Color.White,
         shape = RoundedCornerShape(6.dp),
         border = BorderStroke(1.5.dp, Color(0xFF1E293B)),
         shadowElevation = 1.dp,
         modifier = modifier
     ) {
         Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(end = 6.dp)
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Blue EU / Country Strip
+            // Bandeau Drapeau RDC avec code pays "CGO"
             Box(
                 modifier = Modifier
-                    .background(Color(0xFF003399))
-                    .padding(horizontal = 4.dp, vertical = 2.dp),
+                    .background(Color(0xFF0077C8)) // Bleu ciel officiel RDC
+                    .padding(horizontal = 6.dp, vertical = 3.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "F",
-                    color = Color.White,
-                    fontWeight = FontWeight.Black,
-                    fontSize = 10.sp
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    // Étoile jaune en haut du drapeau
+                    Text(
+                        text = "★",
+                        color = Color(0xFFFFD100), // Jaune vif RDC
+                        fontSize = 8.5.sp,
+                        lineHeight = 8.5.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    // Code international du pays
+                    Text(
+                        text = "CGO",
+                        color = Color.White,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 8.sp,
+                        lineHeight = 9.sp,
+                        letterSpacing = 0.5.sp
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.width(6.dp))
-
-            // Plate registration number
+            // Numéro de plaque d'immatriculation RDC (sans code province)
             Text(
-                text = plate.uppercase(),
+                text = cleanPlate,
                 color = Color(0xFF0F172A),
                 fontWeight = FontWeight.Black,
                 fontFamily = FontFamily.Monospace,
-                fontSize = 12.sp,
-                letterSpacing = 1.sp
+                fontSize = 13.5.sp,
+                letterSpacing = 1.4.sp,
+                modifier = Modifier.padding(start = 8.dp, end = 10.dp, top = 2.5.dp, bottom = 2.5.dp)
             )
         }
     }
@@ -274,6 +296,190 @@ val carWashInputTextStyle = TextStyle(
     letterSpacing = 0.15.sp
 )
 
+/**
+ * Modern Form Sheet Header with Icon Badge, Typography and Close button
+ */
+@Composable
+fun FormSheetHeader(
+    title: String,
+    subtitle: String? = null,
+    icon: ImageVector,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(
+                        Brush.linearGradient(
+                            listOf(Color(0xFFE0F2FE), Color(0xFFBAE6FD))
+                        )
+                    )
+                    .border(1.dp, Color(0xFF7DD3FC), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = BlueAccent,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Navy900,
+                        fontSize = 18.sp
+                    )
+                )
+                if (subtitle != null) {
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = TextSecondary,
+                            fontSize = 12.sp
+                        )
+                    )
+                }
+            }
+        }
+        Surface(
+            shape = CircleShape,
+            color = Color(0xFFF1F5F9),
+            modifier = Modifier.size(36.dp)
+        ) {
+            IconButton(onClick = onDismiss, modifier = Modifier.fillMaxSize()) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Fermer",
+                    tint = TextSecondary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Modern High-Visibility Form Error Banner
+ */
+@Composable
+fun FormErrorBanner(
+    message: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        color = Color(0xFFFFF1F2),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, Color(0xFFFECDD3)),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.ErrorOutline,
+                contentDescription = null,
+                tint = Color(0xFFE11D48),
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(
+                text = message,
+                color = Color(0xFFBE123C),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                lineHeight = 18.sp
+            )
+        }
+    }
+}
+
+/**
+ * Form Section Header with micro-label styling
+ */
+@Composable
+fun FormSectionHeader(
+    title: String,
+    icon: ImageVector? = null,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth().padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = BlueAccent,
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+        }
+        Text(
+            text = title.uppercase(),
+            style = TextStyle(
+                fontSize = 11.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = TextMuted,
+                letterSpacing = 1.sp
+            )
+        )
+    }
+}
+
+/**
+ * Modern Segmented/Pill Option Selector
+ */
+@Composable
+fun FormOptionSelector(
+    options: List<Pair<String, String>>, // key to label
+    selectedOption: String,
+    onOptionSelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        options.forEach { (key, label) ->
+            val isSelected = selectedOption == key
+            Surface(
+                color = if (isSelected) Navy900 else Color(0xFFF8FAFC),
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, if (isSelected) Navy900 else Color(0xFFCBD5E1)),
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { onOptionSelected(key) }
+            ) {
+                Text(
+                    text = label,
+                    color = if (isSelected) Color.White else TextPrimary,
+                    fontSize = 13.sp,
+                    fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp)
+                )
+            }
+        }
+    }
+}
+
 @Composable
 fun CarWashInputField(
     value: String,
@@ -286,6 +492,8 @@ fun CarWashInputField(
     singleLine: Boolean = true,
     enabled: Boolean = true,
     readOnly: Boolean = false,
+    isError: Boolean = false,
+    supportingText: String? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
@@ -312,12 +520,21 @@ fun CarWashInputField(
                 )
             }
         } else null,
+        supportingText = if (supportingText != null) {
+            {
+                Text(
+                    text = supportingText,
+                    fontSize = 11.sp,
+                    color = if (isError) Color(0xFFE11D48) else TextMuted
+                )
+            }
+        } else null,
         leadingIcon = if (leadingIcon != null) {
             {
                 Icon(
                     imageVector = leadingIcon,
                     contentDescription = null,
-                    tint = BlueAccent,
+                    tint = if (isError) Color(0xFFE11D48) else BlueAccent,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -326,6 +543,7 @@ fun CarWashInputField(
         singleLine = singleLine,
         enabled = enabled,
         readOnly = readOnly,
+        isError = isError,
         visualTransformation = visualTransformation,
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,

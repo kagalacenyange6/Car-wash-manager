@@ -536,28 +536,40 @@ private fun Step2ChooseVehicle(
         if (showAddVehicle) {
             Spacer(modifier = Modifier.height(10.dp))
             Card(
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                shape = RoundedCornerShape(14.dp),
-                border = BorderStroke(1.5.dp, Color(0xFFCBD5E1)),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    Text(
-                        text = "Ajouter un véhicule",
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold, color = Navy900)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(30.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFFE0F2FE)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.DirectionsCar, contentDescription = null, tint = BlueAccent, modifier = Modifier.size(18.dp))
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Ajouter un véhicule",
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold, color = Navy900)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
                     OutlinedTextField(
                         value = plate,
                         onValueChange = { plate = it.uppercase() },
-                        label = { Text("Plaque d'immatriculation * (ex: KN-1024-AA)", fontWeight = FontWeight.SemiBold) },
+                        label = { Text("Plaque d'immatriculation * (ex: 1024 AB)", fontWeight = FontWeight.SemiBold) },
                         textStyle = carWashInputTextStyle,
                         colors = carWashTextFieldColors(),
                         modifier = Modifier.fillMaxWidth().testTag("new_vehicle_plate"),
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp)
                     )
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     Row(modifier = Modifier.fillMaxWidth()) {
                         OutlinedTextField(
                             value = brand,
@@ -581,32 +593,33 @@ private fun Step2ChooseVehicle(
                             shape = RoundedCornerShape(12.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Type de véhicule :", fontSize = 12.sp, color = TextSecondary)
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text("Type de véhicule :", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextSecondary)
+                    Spacer(modifier = Modifier.height(6.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         listOf("Berline", "SUV", "Pick-up").forEach { t ->
                             val isSel = vehicleType == t
                             Surface(
                                 color = if (isSel) Navy900 else Color.White,
-                                shape = RoundedCornerShape(8.dp),
-                                border = BorderStroke(1.dp, if (isSel) Navy900 else BorderLight),
-                                modifier = Modifier.clickable { vehicleType = t }
+                                shape = RoundedCornerShape(10.dp),
+                                border = BorderStroke(1.dp, if (isSel) Navy900 else Color(0xFFCBD5E1)),
+                                modifier = Modifier.weight(1f).clickable { vehicleType = t }
                             ) {
                                 Text(
                                     text = t,
                                     color = if (isSel) Color.White else TextPrimary,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                    fontSize = 12.sp,
+                                    fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp)
                                 )
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
                     CarWashPrimaryButton(
                         text = "Enregistrer et continuer",
                         onClick = {

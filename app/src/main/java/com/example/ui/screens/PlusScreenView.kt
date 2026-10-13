@@ -89,6 +89,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
 import com.example.data.model.Company
 import com.example.data.model.Employee
 import com.example.data.model.Expense
@@ -97,8 +100,12 @@ import com.example.data.model.StockMovement
 import com.example.data.model.WashService
 import com.example.ui.CarWashViewModel
 import com.example.ui.PlusScreen
+import com.example.ui.components.CarWashInputField
 import com.example.ui.components.CarWashPrimaryButton
 import com.example.ui.components.EmptyStateView
+import com.example.ui.components.FormErrorBanner
+import com.example.ui.components.FormOptionSelector
+import com.example.ui.components.FormSheetHeader
 import com.example.ui.components.StatusChip
 import com.example.ui.components.carWashInputTextStyle
 import com.example.ui.components.carWashTextFieldColors
@@ -606,70 +613,75 @@ fun AddExpenseSheet(
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 32.dp)
         ) {
-            Text("Nouvelle Dépense", fontWeight = FontWeight.Bold, color = Navy900, fontSize = 18.sp)
-            Spacer(modifier = Modifier.height(8.dp))
+            FormSheetHeader(
+                title = "Nouvelle Dépense",
+                subtitle = "Enregistrez une sortie de caisse ou frais d'exploitation",
+                icon = Icons.Default.MoneyOff,
+                onDismiss = onDismiss
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
 
             if (errorMessage != null) {
-                Surface(
-                    color = Color(0xFFFFE4E6),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = errorMessage ?: "",
-                        color = Color(0xFFE11D48),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
+                FormErrorBanner(message = errorMessage!!)
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
-            Text("Catégorie :", fontSize = 12.sp, color = TextSecondary)
-            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "CATÉGORIE DE DÉPENSE",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = TextMuted,
+                letterSpacing = 0.8.sp
+            )
+            Spacer(modifier = Modifier.height(6.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 categories.take(3).forEach { cat ->
                     val isSel = category == cat
                     Surface(
-                        color = if (isSel) Navy900 else Color(0xFFF1F5F9),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.clickable { category = cat }
+                        color = if (isSel) Navy900 else Color(0xFFF8FAFC),
+                        shape = RoundedCornerShape(10.dp),
+                        border = BorderStroke(1.dp, if (isSel) Navy900 else BorderLight),
+                        modifier = Modifier.weight(1f).clickable { category = cat }
                     ) {
-                        Text(cat, color = if (isSel) Color.White else TextPrimary, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp))
+                        Text(
+                            text = cat,
+                            color = if (isSel) Color.White else TextPrimary,
+                            fontSize = 12.sp,
+                            fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp)
+                        )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
-            OutlinedTextField(
+            Spacer(modifier = Modifier.height(12.dp))
+
+            CarWashInputField(
                 value = amountText,
                 onValueChange = { 
                     amountText = it 
                     errorMessage = null
                 },
-                label = { Text("Montant *", fontWeight = FontWeight.SemiBold) },
-                textStyle = carWashInputTextStyle,
-                colors = carWashTextFieldColors(),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
+                label = "Montant de la dépense *",
+                placeholder = "ex: 25.0",
+                leadingIcon = Icons.Default.AttachMoney,
                 isError = errorMessage != null && amountText.isBlank(),
-                shape = RoundedCornerShape(12.dp)
+                supportingText = if (errorMessage != null && amountText.isBlank()) "Le montant est obligatoire" else null
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
+            Spacer(modifier = Modifier.height(10.dp))
+
+            CarWashInputField(
                 value = description,
                 onValueChange = { description = it },
-                label = { Text("Description / Motif", fontWeight = FontWeight.SemiBold) },
-                textStyle = carWashInputTextStyle,
-                colors = carWashTextFieldColors(),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                label = "Description / Motif de la dépense",
+                placeholder = "ex: Bidon de shampoing moussant 5L"
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
+
             Button(
                 onClick = {
                     val amt = amountText.trim().replace(",", ".").toDoubleOrNull()
@@ -683,9 +695,9 @@ fun AddExpenseSheet(
                     containerColor = StatusDebt,
                     contentColor = Color.White
                 ),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
-                modifier = Modifier.fillMaxWidth().height(50.dp)
+                modifier = Modifier.fillMaxWidth().height(52.dp)
             ) {
                 Text("Enregistrer la dépense", fontWeight = FontWeight.ExtraBold, color = Color.White, fontSize = 15.sp)
             }
@@ -826,77 +838,86 @@ fun StockAdjustSheet(
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 32.dp)
         ) {
-            Text("Ajuster : ${product.name}", fontWeight = FontWeight.Bold, color = Navy900, fontSize = 18.sp)
-            Text("Stock actuel : ${product.currentStock} ${product.unit}", fontSize = 12.sp, color = TextSecondary)
-            Spacer(modifier = Modifier.height(12.dp))
+            FormSheetHeader(
+                title = "Ajustement Stock",
+                subtitle = "${product.name} • Actuel: ${product.currentStock} ${product.unit}",
+                icon = Icons.Default.Inventory,
+                onDismiss = onDismiss
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Text(
+                text = "TYPE DE MOUVEMENT",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = TextMuted,
+                letterSpacing = 0.8.sp
+            )
+            Spacer(modifier = Modifier.height(6.dp))
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
-                    onClick = { isAdd = true },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isAdd) Color(0xFF059669) else Color(0xFFF1F5F9),
-                        contentColor = if (isAdd) Color.White else Navy900
-                    ),
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.weight(1f)
+                Surface(
+                    color = if (isAdd) Color(0xFF059669) else Color(0xFFF8FAFC),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.2.dp, if (isAdd) Color(0xFF059669) else BorderLight),
+                    modifier = Modifier.weight(1f).clickable { isAdd = true }
                 ) {
-                    Text("+ Entrée", color = if (isAdd) Color.White else Navy900, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
+                    Text(
+                        text = "+ ENTRÉE",
+                        color = if (isAdd) Color.White else Navy900,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 13.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.padding(vertical = 12.dp, horizontal = 4.dp)
+                    )
                 }
-                Button(
-                    onClick = { isAdd = false },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (!isAdd) Color(0xFFE11D48) else Color(0xFFF1F5F9),
-                        contentColor = if (!isAdd) Color.White else Navy900
-                    ),
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.weight(1f)
+                Surface(
+                    color = if (!isAdd) Color(0xFFE11D48) else Color(0xFFF8FAFC),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.2.dp, if (!isAdd) Color(0xFFE11D48) else BorderLight),
+                    modifier = Modifier.weight(1f).clickable { isAdd = false }
                 ) {
-                    Text("- Sortie", color = if (!isAdd) Color.White else Navy900, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
+                    Text(
+                        text = "- SORTIE",
+                        color = if (!isAdd) Color.White else Navy900,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 13.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.padding(vertical = 12.dp, horizontal = 4.dp)
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
-            OutlinedTextField(
+            Spacer(modifier = Modifier.height(12.dp))
+
+            CarWashInputField(
                 value = qtyText,
                 onValueChange = { qtyText = it },
-                label = { Text("Quantité (${product.unit}) *", fontWeight = FontWeight.SemiBold) },
-                textStyle = carWashInputTextStyle,
-                colors = carWashTextFieldColors(),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                label = "Quantité (${product.unit}) *",
+                placeholder = "ex: 5.0"
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
+            Spacer(modifier = Modifier.height(10.dp))
+
+            CarWashInputField(
                 value = reason,
                 onValueChange = { reason = it },
-                label = { Text("Motif (ex: Achat fournisseur, Lavage atelier)", fontWeight = FontWeight.SemiBold) },
-                textStyle = carWashInputTextStyle,
-                colors = carWashTextFieldColors(),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                label = "Motif ou référence",
+                placeholder = "ex: Achat fournisseur, Consommation atelier"
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
+            Spacer(modifier = Modifier.height(20.dp))
+
+            CarWashPrimaryButton(
+                text = "Valider le mouvement",
                 onClick = {
                     val q = qtyText.replace(",", ".").toDoubleOrNull()
                     if (q != null && q > 0) {
                         onConfirm(if (isAdd) "ENTREE" else "SORTIE", q, reason)
                     }
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Navy900,
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(12.dp),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
-                modifier = Modifier.fillMaxWidth().height(50.dp)
-            ) {
-                Text("Valider le mouvement", fontWeight = FontWeight.ExtraBold, color = Color.White, fontSize = 15.sp)
-            }
+                }
+            )
         }
     }
 }
@@ -920,99 +941,78 @@ fun AddProductSheet(
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 32.dp)
         ) {
-            Text("Nouveau Produit au Stock", fontWeight = FontWeight.Bold, color = Navy900, fontSize = 18.sp)
-            Spacer(modifier = Modifier.height(8.dp))
+            FormSheetHeader(
+                title = "Nouveau Produit au Stock",
+                subtitle = "Enregistrez un article, stock initial et alerte de réapprovisionnement",
+                icon = Icons.Default.Inventory,
+                onDismiss = onDismiss
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
 
             if (errorMessage != null) {
-                Surface(
-                    color = Color(0xFFFFE4E6),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = errorMessage ?: "",
-                        color = Color(0xFFE11D48),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
+                FormErrorBanner(message = errorMessage!!)
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
-            OutlinedTextField(
+            CarWashInputField(
                 value = name,
                 onValueChange = { 
                     name = it 
                     errorMessage = null
                 },
-                label = { Text("Nom de l'article * (ex: Shampoing carrosserie)", fontWeight = FontWeight.SemiBold) },
-                textStyle = carWashInputTextStyle,
-                colors = carWashTextFieldColors(),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
+                label = "Désignation de l'article *",
+                placeholder = "ex: Shampoing carrosserie moussant",
                 isError = errorMessage != null && name.isBlank(),
-                shape = RoundedCornerShape(12.dp)
+                supportingText = if (errorMessage != null && name.isBlank()) "Le nom est obligatoire" else null
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                CarWashInputField(
                     value = stockText,
                     onValueChange = { stockText = it },
-                    label = { Text("Stock initial", fontWeight = FontWeight.SemiBold) },
-                    textStyle = carWashInputTextStyle,
-                    colors = carWashTextFieldColors(),
-                    modifier = Modifier.weight(1f),
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
+                    label = "Stock initial",
+                    placeholder = "ex: 10",
+                    modifier = Modifier.weight(1f)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                OutlinedTextField(
+                CarWashInputField(
                     value = unit,
                     onValueChange = { unit = it },
-                    label = { Text("Unité (L, pcs, kg)", fontWeight = FontWeight.SemiBold) },
-                    textStyle = carWashInputTextStyle,
-                    colors = carWashTextFieldColors(),
-                    modifier = Modifier.weight(1f),
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
+                    label = "Unité",
+                    placeholder = "L, pcs, kg",
+                    modifier = Modifier.weight(1f)
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
+            Spacer(modifier = Modifier.height(10.dp))
+
+            CarWashInputField(
                 value = minThText,
                 onValueChange = { minThText = it },
-                label = { Text("Seuil d'alerte minimum", fontWeight = FontWeight.SemiBold) },
-                textStyle = carWashInputTextStyle,
-                colors = carWashTextFieldColors(),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                label = "Seuil d'alerte minimum",
+                placeholder = "ex: 5",
+                supportingText = "Une alerte sera affichée si le stock passe sous ce seuil."
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
+            Spacer(modifier = Modifier.height(20.dp))
+
+            CarWashPrimaryButton(
+                text = "Enregistrer l'article",
                 onClick = {
                     if (name.trim().isBlank()) {
                         errorMessage = "Veuillez renseigner le nom de l'article"
-                        return@Button
+                        return@CarWashPrimaryButton
                     }
                     val s = stockText.trim().replace(",", ".").toDoubleOrNull() ?: 0.0
                     val m = minThText.trim().replace(",", ".").toDoubleOrNull() ?: 5.0
                     onSave(name.trim(), s, unit.trim().ifBlank { "L" }, m)
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Navy900,
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(12.dp),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
-                modifier = Modifier.fillMaxWidth().height(50.dp)
-            ) {
-                Text("Enregistrer l'article", fontWeight = FontWeight.ExtraBold, color = Color.White, fontSize = 15.sp)
-            }
+                }
+            )
         }
     }
 }
@@ -1267,100 +1267,86 @@ fun EditEmployeeSheet(
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 32.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Modifier l'Employé", fontWeight = FontWeight.Bold, color = Navy900, fontSize = 18.sp)
-                IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = "Fermer", tint = TextSecondary)
-                }
-            }
-            Spacer(modifier = Modifier.height(8.dp))
+            FormSheetHeader(
+                title = "Modifier l'Employé",
+                subtitle = "Mettez à jour le profil, téléphone, rôle ou code d'accès",
+                icon = Icons.Default.Badge,
+                onDismiss = onDismiss
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
 
             if (errorMessage != null) {
-                Surface(
-                    color = Color(0xFFFFE4E6),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = errorMessage ?: "",
-                        color = Color(0xFFE11D48),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
+                FormErrorBanner(message = errorMessage!!)
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
-            OutlinedTextField(
+            CarWashInputField(
                 value = name,
                 onValueChange = {
                     name = it
                     errorMessage = null
                 },
-                label = { Text("Nom complet *", fontWeight = FontWeight.SemiBold) },
-                textStyle = carWashInputTextStyle,
-                colors = carWashTextFieldColors(),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
+                label = "Nom complet *",
+                placeholder = "ex: Patrick KARUBANDIKA",
+                leadingIcon = Icons.Default.Person,
                 isError = errorMessage != null && name.isBlank(),
-                shape = RoundedCornerShape(12.dp)
+                supportingText = if (errorMessage != null && name.isBlank()) "Le nom est obligatoire" else null
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
+            Spacer(modifier = Modifier.height(10.dp))
+
+            CarWashInputField(
                 value = phone,
                 onValueChange = {
                     phone = it
                     errorMessage = null
                 },
-                label = { Text("Téléphone", fontWeight = FontWeight.SemiBold) },
-                textStyle = carWashInputTextStyle,
-                colors = carWashTextFieldColors(),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                label = "Numéro de téléphone",
+                placeholder = "ex: +243 99 123 4567",
+                leadingIcon = Icons.Default.Phone
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("Rôle :", fontSize = 12.sp, color = TextSecondary)
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("EMPLOYEE" to "Employé", "MANAGER" to "Gérant", "ADMIN" to "Admin").forEach { (r, label) ->
-                    val isSel = role == r
-                    Surface(
-                        color = if (isSel) Navy900 else Color(0xFFF1F5F9),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.clickable { role = r }
-                    ) {
-                        Text(label, color = if (isSel) Color.White else TextPrimary, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))
-                    }
-                }
-            }
+            Spacer(modifier = Modifier.height(12.dp))
 
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
+            Text(
+                text = "RÔLE ET RESPONSABILITÉ",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = TextMuted,
+                letterSpacing = 0.8.sp
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            FormOptionSelector(
+                options = listOf(
+                    "EMPLOYEE" to "Employé",
+                    "MANAGER" to "Gérant",
+                    "ADMIN" to "Admin"
+                ),
+                selectedOption = role,
+                onOptionSelected = { role = it }
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            CarWashInputField(
                 value = pin,
                 onValueChange = {
                     if (it.length <= 8) pin = it
                 },
-                label = { Text("Code PIN (4 chiffres)", fontWeight = FontWeight.SemiBold) },
-                textStyle = carWashInputTextStyle,
-                colors = carWashTextFieldColors(),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                label = "Code PIN d'accès (4 chiffres)",
+                placeholder = "ex: 1234",
+                leadingIcon = Icons.Default.Lock
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
+            Spacer(modifier = Modifier.height(20.dp))
+
+            CarWashPrimaryButton(
+                text = "Enregistrer les modifications",
                 onClick = {
                     if (name.trim().isBlank()) {
                         errorMessage = "Veuillez renseigner le nom complet de l'employé"
-                        return@Button
+                        return@CarWashPrimaryButton
                     }
                     val cleanPhone = phone.trim().ifBlank { "-" }
                     val cleanPin = pin.trim().ifBlank { employee.pinCode }
@@ -1371,17 +1357,8 @@ fun EditEmployeeSheet(
                         pinCode = cleanPin
                     )
                     onSave(updated)
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Navy900,
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(12.dp),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
-                modifier = Modifier.fillMaxWidth().height(50.dp)
-            ) {
-                Text("Enregistrer les modifications", fontWeight = FontWeight.ExtraBold, color = Color.White, fontSize = 15.sp)
-            }
+                }
+            )
         }
     }
 }
@@ -1405,104 +1382,90 @@ fun AddEmployeeSheet(
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 32.dp)
         ) {
-            Text("Ajouter un Employé", fontWeight = FontWeight.Bold, color = Navy900, fontSize = 18.sp)
-            Spacer(modifier = Modifier.height(8.dp))
+            FormSheetHeader(
+                title = "Nouveau Collaborateur",
+                subtitle = "Ajoutez un employé, gérant ou administrateur du car wash",
+                icon = Icons.Default.Badge,
+                onDismiss = onDismiss
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
 
             if (errorMessage != null) {
-                Surface(
-                    color = Color(0xFFFFE4E6),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = errorMessage ?: "",
-                        color = Color(0xFFE11D48),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
+                FormErrorBanner(message = errorMessage!!)
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
-            OutlinedTextField(
+            CarWashInputField(
                 value = name,
                 onValueChange = { 
                     name = it 
                     errorMessage = null
                 },
-                label = { Text("Nom complet *", fontWeight = FontWeight.SemiBold) },
-                textStyle = carWashInputTextStyle,
-                colors = carWashTextFieldColors(),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
+                label = "Nom complet *",
+                placeholder = "ex: Patrick KARUBANDIKA",
+                leadingIcon = Icons.Default.Person,
                 isError = errorMessage != null && name.isBlank(),
-                shape = RoundedCornerShape(12.dp)
+                supportingText = if (errorMessage != null && name.isBlank()) "Le nom est obligatoire" else null
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
+            Spacer(modifier = Modifier.height(10.dp))
+
+            CarWashInputField(
                 value = phone,
                 onValueChange = { 
                     phone = it 
                     errorMessage = null
                 },
-                label = { Text("Téléphone (optionnel)", fontWeight = FontWeight.SemiBold) },
-                textStyle = carWashInputTextStyle,
-                colors = carWashTextFieldColors(),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                label = "Numéro de téléphone",
+                placeholder = "ex: +243 99 123 4567",
+                leadingIcon = Icons.Default.Phone
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("Rôle :", fontSize = 12.sp, color = TextSecondary)
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("EMPLOYEE" to "Employé", "MANAGER" to "Gérant", "ADMIN" to "Admin").forEach { (r, label) ->
-                    val isSel = role == r
-                    Surface(
-                        color = if (isSel) Navy900 else Color(0xFFF1F5F9),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.clickable { role = r }
-                    ) {
-                        Text(label, color = if (isSel) Color.White else TextPrimary, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))
-                    }
-                }
-            }
+            Spacer(modifier = Modifier.height(12.dp))
 
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
+            Text(
+                text = "RÔLE ET RESPONSABILITÉ",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = TextMuted,
+                letterSpacing = 0.8.sp
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            FormOptionSelector(
+                options = listOf(
+                    "EMPLOYEE" to "Employé",
+                    "MANAGER" to "Gérant",
+                    "ADMIN" to "Admin"
+                ),
+                selectedOption = role,
+                onOptionSelected = { role = it }
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            CarWashInputField(
                 value = pin,
                 onValueChange = { pin = it },
-                label = { Text("Code PIN (4 chiffres)", fontWeight = FontWeight.SemiBold) },
-                textStyle = carWashInputTextStyle,
-                colors = carWashTextFieldColors(),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                label = "Code PIN d'accès (4 chiffres)",
+                placeholder = "ex: 1234",
+                leadingIcon = Icons.Default.Lock
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
+            Spacer(modifier = Modifier.height(20.dp))
+
+            CarWashPrimaryButton(
+                text = "Enregistrer le membre",
                 onClick = {
                     if (name.trim().isBlank()) {
                         errorMessage = "Veuillez renseigner le nom complet de l'employé"
-                        return@Button
+                        return@CarWashPrimaryButton
                     }
                     val cleanPhone = phone.trim().ifBlank { "-" }
                     val cleanPin = pin.trim().ifBlank { "1234" }
                     onSave(name.trim(), "${name.trim().lowercase().replace(" ", "")}@carwash.com", cleanPhone, role, cleanPin)
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Navy900,
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(12.dp),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
-                modifier = Modifier.fillMaxWidth().height(50.dp)
-            ) {
-                Text("Enregistrer le membre", fontWeight = FontWeight.ExtraBold, color = Color.White, fontSize = 15.sp)
-            }
+                }
+            )
         }
     }
 }
@@ -2725,94 +2688,76 @@ fun AddServiceSheet(
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 32.dp)
         ) {
-            Text("Nouveau Service de Lavage", fontWeight = FontWeight.Bold, color = Navy900, fontSize = 18.sp)
-            Spacer(modifier = Modifier.height(8.dp))
+            FormSheetHeader(
+                title = "Nouveau Service de Lavage",
+                subtitle = "Configurez la formule, son tarif et la durée estimée",
+                icon = Icons.Default.LocalCarWash,
+                onDismiss = onDismiss
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
 
             if (errorMessage != null) {
-                Surface(
-                    color = Color(0xFFFFE4E6),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = errorMessage ?: "",
-                        color = Color(0xFFE11D48),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
+                FormErrorBanner(message = errorMessage!!)
+                Spacer(modifier = Modifier.height(12.dp))
             }
 
-            OutlinedTextField(
+            CarWashInputField(
                 value = name,
                 onValueChange = { 
                     name = it 
                     errorMessage = null
                 },
-                label = { Text("Nom du service * (ex: Lavage VIP Moteur)", fontWeight = FontWeight.SemiBold) },
-                textStyle = carWashInputTextStyle,
-                colors = carWashTextFieldColors(),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
+                label = "Nom de la formule *",
+                placeholder = "ex: Lavage VIP Mousse + Châssis",
+                leadingIcon = Icons.Default.LocalCarWash,
                 isError = errorMessage != null && name.isBlank(),
-                shape = RoundedCornerShape(12.dp)
+                supportingText = if (errorMessage != null && name.isBlank()) "Le nom est obligatoire" else null
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
+            Spacer(modifier = Modifier.height(10.dp))
+
+            CarWashInputField(
                 value = priceText,
                 onValueChange = { 
                     priceText = it 
                     errorMessage = null
                 },
-                label = { Text("Prix *", fontWeight = FontWeight.SemiBold) },
-                textStyle = carWashInputTextStyle,
-                colors = carWashTextFieldColors(),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
+                label = "Tarif / Prix *",
+                placeholder = "ex: 15.0",
+                leadingIcon = Icons.Default.AttachMoney,
                 isError = errorMessage != null && (priceText.isBlank() || priceText.replace(",", ".").toDoubleOrNull() == null),
-                shape = RoundedCornerShape(12.dp)
+                supportingText = if (errorMessage != null && (priceText.isBlank() || priceText.replace(",", ".").toDoubleOrNull() == null)) "Prix valide obligatoire" else null
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
+            Spacer(modifier = Modifier.height(10.dp))
+
+            CarWashInputField(
                 value = durationText,
                 onValueChange = { durationText = it },
-                label = { Text("Durée estimée (minutes)", fontWeight = FontWeight.SemiBold) },
-                textStyle = carWashInputTextStyle,
-                colors = carWashTextFieldColors(),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                label = "Durée estimée (minutes)",
+                placeholder = "ex: 25",
+                leadingIcon = Icons.Default.History
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
+            Spacer(modifier = Modifier.height(20.dp))
+
+            CarWashPrimaryButton(
+                text = "Enregistrer le service",
                 onClick = {
                     if (name.trim().isBlank()) {
                         errorMessage = "Veuillez renseigner le nom du service"
-                        return@Button
+                        return@CarWashPrimaryButton
                     }
                     val p = priceText.trim().replace(",", ".").toDoubleOrNull()
                     if (p == null || p <= 0) {
                         errorMessage = "Veuillez entrer un prix valide supérieur à 0"
-                        return@Button
+                        return@CarWashPrimaryButton
                     }
                     val d = durationText.trim().toIntOrNull() ?: 20
                     onSave(name.trim(), p, d)
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Navy900,
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(12.dp),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
-                modifier = Modifier.fillMaxWidth().height(50.dp)
-            ) {
-                Text("Enregistrer le service", fontWeight = FontWeight.ExtraBold, color = Color.White, fontSize = 15.sp)
-            }
+                }
+            )
         }
     }
 }

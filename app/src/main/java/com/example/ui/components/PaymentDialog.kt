@@ -51,6 +51,11 @@ import androidx.compose.ui.unit.sp
 import com.example.data.model.Company
 import com.example.data.model.PaymentMethod
 import com.example.data.model.WashOrder
+import com.example.ui.components.CarWashInputField
+import com.example.ui.components.FormErrorBanner
+import com.example.ui.components.FormSheetHeader
+import com.example.ui.components.carWashInputTextStyle
+import com.example.ui.components.carWashTextFieldColors
 import com.example.ui.theme.BlueAccent
 import com.example.ui.theme.BorderLight
 import com.example.ui.theme.Navy900
@@ -94,33 +99,19 @@ fun PaymentBottomSheet(
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 32.dp)
         ) {
-            // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "Encaissement - ${order.orderNumber}",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = Navy900,
-                            fontSize = 18.sp
-                        )
-                    )
-                    Text(
-                        text = "${order.customerName} • ${order.vehiclePlate}",
-                        style = MaterialTheme.typography.bodySmall.copy(color = TextSecondary)
-                    )
-                }
+            FormSheetHeader(
+                title = "Encaissement • ${order.orderNumber}",
+                subtitle = "${order.customerName} • ${order.vehiclePlate}",
+                icon = Icons.Default.AttachMoney,
+                onDismiss = onDismiss
+            )
 
-                IconButton(onClick = onDismiss, modifier = Modifier.size(36.dp)) {
-                    Icon(Icons.Default.Close, contentDescription = "Fermer", tint = TextSecondary)
-                }
+            Spacer(modifier = Modifier.height(14.dp))
+
+            if (errorMessage != null) {
+                FormErrorBanner(message = errorMessage!!)
+                Spacer(modifier = Modifier.height(12.dp))
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
 
             // Amount summary card
             Card(
@@ -153,10 +144,10 @@ fun PaymentBottomSheet(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("RESTE À PAYER :", fontWeight = FontWeight.Bold, color = Navy900, fontSize = 15.sp)
+                        Text("RESTE À PAYER :", fontWeight = FontWeight.Bold, color = Navy900, fontSize = 14.sp)
                         Text(
                             text = String.format(Locale.US, "%.2f %s", remaining, currency),
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.ExtraBold,
                             color = if (remaining > 0) StatusDebt else StatusCompleted,
                             fontSize = 20.sp
                         )
@@ -164,16 +155,17 @@ fun PaymentBottomSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             // Payment method selector
             Text(
-                text = "Mode de paiement :",
-                fontWeight = FontWeight.SemiBold,
-                color = Navy900,
-                fontSize = 14.sp
+                text = "MODE DE PAIEMENT",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = TextMuted,
+                letterSpacing = 0.8.sp
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -189,9 +181,9 @@ fun PaymentBottomSheet(
                 methods.forEach { (m, label, icon) ->
                     val isSelected = selectedMethod == m
                     Surface(
-                        color = if (isSelected) Navy900 else Color(0xFFF1F5F9),
-                        shape = RoundedCornerShape(10.dp),
-                        border = BorderStroke(1.dp, if (isSelected) Navy900 else BorderLight),
+                        color = if (isSelected) Navy900 else Color(0xFFF8FAFC),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.2.dp, if (isSelected) Navy900 else BorderLight),
                         modifier = Modifier
                             .weight(1f)
                             .clickable { selectedMethod = m }
@@ -211,7 +203,7 @@ fun PaymentBottomSheet(
                             Text(
                                 text = label,
                                 fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.SemiBold,
                                 color = if (isSelected) Color.White else TextPrimary
                             )
                         }
@@ -219,49 +211,38 @@ fun PaymentBottomSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             // Amount input field
-            OutlinedTextField(
+            CarWashInputField(
                 value = amountInput,
                 onValueChange = {
                     amountInput = it
                     errorMessage = null
                 },
-                label = { Text("Montant à encaisser ($currency) *", fontWeight = FontWeight.SemiBold) },
-                textStyle = carWashInputTextStyle,
-                colors = carWashTextFieldColors(),
-                modifier = Modifier.fillMaxWidth().testTag("payment_amount_input"),
+                label = "Montant à encaisser ($currency) *",
+                placeholder = "ex: 15.0",
+                leadingIcon = Icons.Default.AttachMoney,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                singleLine = true,
                 isError = errorMessage != null,
-                supportingText = {
-                    if (errorMessage != null) {
-                        Text(errorMessage!!, color = Color(0xFFEF4444), fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                    } else {
-                        Text("Paiement partiel autorisé. Reste = Dette.", color = Color(0xFF64748B), fontSize = 11.sp)
-                    }
-                },
-                shape = RoundedCornerShape(12.dp)
+                supportingText = "Paiement partiel autorisé. Solde non réglé = Dette.",
+                testTag = "payment_amount_input"
             )
 
             // Optional Reference input for Mobile Money or Card
             if (selectedMethod == PaymentMethod.MOBILE_MONEY || selectedMethod == PaymentMethod.CARD) {
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
+                Spacer(modifier = Modifier.height(10.dp))
+                CarWashInputField(
                     value = referenceInput,
                     onValueChange = { referenceInput = it },
-                    label = { Text("N° de transaction / Référence (optionnel)", fontWeight = FontWeight.SemiBold) },
-                    placeholder = { Text("ex: M-PESA 892301", color = Color(0xFF64748B)) },
-                    textStyle = carWashInputTextStyle,
-                    colors = carWashTextFieldColors(),
-                    modifier = Modifier.fillMaxWidth().testTag("payment_reference_input"),
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
+                    label = "N° transaction / Référence (optionnel)",
+                    placeholder = "ex: M-PESA 892301",
+                    leadingIcon = Icons.Default.Receipt,
+                    testTag = "payment_reference_input"
                 )
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             // Confirm Button
             Button(
@@ -281,7 +262,7 @@ fun PaymentBottomSheet(
                     containerColor = Color(0xFF059669),
                     contentColor = Color.White
                 ),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                 modifier = Modifier
                     .fillMaxWidth()
