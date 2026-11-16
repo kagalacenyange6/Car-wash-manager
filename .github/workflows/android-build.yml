@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build-apk:
-    name: Génération et Publication APK
+    name: Génération et Publication APK (Debug & Release)
     runs-on: ubuntu-latest
 
     steps:
@@ -28,7 +28,11 @@ jobs:
       - name: Configurer Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Préparer l'environnement et le Keystore
+      - name: Préparer l'environnement et les Keystores
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          SECRET_STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          SECRET_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           # Restaurer debug.keystore si présent en base64
           if [ -f debug.keystore.base64 ]; then
@@ -38,6 +42,32 @@ jobs:
             echo "Génération d'un debug.keystore de secours..."
             keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
+
+          # Préparer le keystore de release (my-upload-key.jks avec alias 'upload')
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "Restauration du keystore de release depuis les secrets GitHub..."
+            echo "$KEYSTORE_BASE64" | tr -d '[:space:]' | base64 -d > my-upload-key.jks
+            STORE_PW="$SECRET_STORE_PASSWORD"
+            KEY_PW="${SECRET_KEY_PASSWORD:-$SECRET_STORE_PASSWORD}"
+          elif [ -f my-upload-key.jks.base64 ]; then
+            echo "Restauration de my-upload-key.jks.base64..."
+            tr -d '[:space:]' < my-upload-key.jks.base64 | base64 -d > my-upload-key.jks
+            STORE_PW="${SECRET_STORE_PASSWORD:-carwashrelease}"
+            KEY_PW="${SECRET_KEY_PASSWORD:-$STORE_PW}"
+          elif [ -f my-upload-key.jks ]; then
+            echo "Utilisation du fichier my-upload-key.jks existant..."
+            STORE_PW="${SECRET_STORE_PASSWORD:-carwashrelease}"
+            KEY_PW="${SECRET_KEY_PASSWORD:-$STORE_PW}"
+          else
+            echo "Génération d'un keystore de release de secours (alias: upload)..."
+            STORE_PW="${SECRET_STORE_PASSWORD:-carwashrelease}"
+            KEY_PW="${SECRET_KEY_PASSWORD:-$STORE_PW}"
+            keytool -genkey -v -keystore my-upload-key.jks -storepass "$STORE_PW" -alias upload -keypass "$KEY_PW" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Car Wash Pro,O=JuaTech,C=CD"
+          fi
+
+          echo "KEYSTORE_PATH=${GITHUB_WORKSPACE}/my-upload-key.jks" >> "$GITHUB_ENV"
+          echo "STORE_PASSWORD=$STORE_PW" >> "$GITHUB_ENV"
+          echo "KEY_PASSWORD=$KEY_PW" >> "$GITHUB_ENV"
 
           # Créer le fichier .env pour le plugin Secrets
           if [ ! -f .env ] && [ -f .env.example ]; then
@@ -53,45 +83,74 @@ jobs:
           fi
           chmod +x gradlew
 
-      - name: Compiler l'APK de débogage
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+      - name: Compiler les APK (Debug & Release) et l'AAB Release
+        run: ./gradlew assembleDebug assembleRelease bundleRelease --no-daemon --stacktrace
 
-      - name: Vérifier la présence de l'APK
+      - name: Vérifier la présence des livrables
         run: |
           if [ ! -f app/build/outputs/apk/debug/app-debug.apk ]; then
             echo "Erreur : app-debug.apk introuvable !"
             exit 1
           fi
-          echo "APK généré avec succès :"
+          if [ ! -f app/build/outputs/apk/release/app-release.apk ]; then
+            echo "Erreur : app-release.apk introuvable !"
+            exit 1
+          fi
+          if [ ! -f app/build/outputs/bundle/release/app-release.aab ]; then
+            echo "Erreur : app-release.aab introuvable !"
+            exit 1
+          fi
+          echo "Livrables générés avec succès :"
           ls -lh app/build/outputs/apk/debug/app-debug.apk
+          ls -lh app/build/outputs/apk/release/app-release.apk
+          ls -lh app/build/outputs/bundle/release/app-release.aab
 
-      - name: Téléverser l'artefact APK
+      - name: Téléverser l'artefact APK Debug
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 14
 
+      - name: Téléverser l'artefact APK Release
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
+
+      - name: Téléverser l'artefact AAB Release (Play Store)
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-aab
+          path: app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
       - name: Publier la Release GitHub
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          name: "Car Wash Pro - APK Debug"
+          name: "Car Wash Pro - APK Debug & Release"
           body: |
-            ## 📱 Car Wash Pro - Téléchargement APK
+            ## 📱 Car Wash Pro - Téléchargements Android
 
-            Téléchargement automatique de l'APK de débogage pour Android.
+            Génération automatique des livrables Android (Debug & Release).
 
-            - **Fichier :** `app-debug.apk`
+            - **APK Release (Production) :** `app-release.apk`
+            - **AAB Release (Google Play Store) :** `app-release.aab`
+            - **APK Debug (Tests) :** `app-debug.apk`
             - **Branche :** `${{ github.ref_name }}`
             - **Commit :** `${{ github.sha }}`
 
-            ### 🚀 Instructions d'installation :
-            1. Téléchargez le fichier `app-debug.apk` ci-dessous.
+            ### 🚀 Instructions d'installation (APK) :
+            1. Téléchargez `app-release.apk` (recommandé) ou `app-debug.apk` ci-dessous.
             2. Ouvrez le fichier sur votre appareil Android.
             3. Autorisez l'installation d'applications inconnues si demandé.
             4. Installez et lancez l'application.
-          files: app/build/outputs/apk/debug/app-debug.apk
+          files: |
+            app/build/outputs/apk/release/app-release.apk
+            app/build/outputs/bundle/release/app-release.aab
+            app/build/outputs/apk/debug/app-debug.apk
           prerelease: false
           make_latest: true
         env:
